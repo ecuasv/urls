@@ -77,16 +77,12 @@ class YouTubeIDFinder {
     
     async loadInitialData() {
         this.showLoading(true);
-        this.updateStats("Loading initial data...");
-        
         try {
             const chunk = await this.loadChunk(0);
             const itemsToShow = Math.min(this.itemsPerLoad, chunk.length);
             
             this.displayItems(chunk.slice(0, itemsToShow));
             this.currentDisplayIndex = itemsToShow;
-            
-            this.updateStats(`Showing ${itemsToShow} of ${chunk.length} IDs from chunk 0`);
             this.updateLoadMoreButton();
         } catch (error) {
             console.error("Error loading initial data:", error);
