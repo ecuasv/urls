@@ -85,8 +85,6 @@ class YouTubeIDFinder {
             
             this.displayItems(chunk.slice(0, itemsToShow));
             this.currentDisplayIndex = itemsToShow;
-            
-            this.updateStats(`Showing ${itemsToShow} of ${chunk.length} IDs from chunk 0`);
             this.updateLoadMoreButton();
         } catch (error) {
             console.error("Error loading initial data:", error);
@@ -148,19 +146,16 @@ class YouTubeIDFinder {
             return;
         }
         
-        // Validate search query length
-        if (query.length > 11) {
+        // Validate search query
+        if (!/^[a-zA-Z0-9\-_]+$/.test(query)) {
             this.grid.innerHTML = "";
-            this.updateStats("Search term too long (max 11 characters)");
+            this.updateStats("Invalid characters in search");
             this.noResults.style.display = "block";
             this.loadMoreBtn.style.display = "none";
             return;
         }
-        
-        // Validate search query characters
-        if (!/^[a-zA-Z0-9\-_]+$/.test(query)) {
+        if (query.length > 11) {
             this.grid.innerHTML = "";
-            this.updateStats("Invalid characters in search");
             this.noResults.style.display = "block";
             this.loadMoreBtn.style.display = "none";
             return;
@@ -182,7 +177,6 @@ class YouTubeIDFinder {
         
         try {
             let totalMatches = 0;
-            let displayedResults = new Set(); // Track displayed results to prevent duplicates
             
             // Search through chunks efficiently
             for (let i = 0; i < this.totalChunks; i++) {
@@ -192,29 +186,21 @@ class YouTubeIDFinder {
                 const matches = this.searchInChunk(chunk, this.searchTerm);
                 
                 if (matches.length > 0) {
-                    // Filter out duplicates that might have already been displayed
-                    const newMatches = matches.filter(id => !displayedResults.has(id));
-                    this.searchResults.push(...newMatches);
-                    totalMatches += newMatches.length;
+                    this.searchResults.push(...matches);
+                    totalMatches += matches.length;
                     
                     // Display first batch immediately
                     if (i === 0 || this.grid.children.length < this.itemsPerLoad) {
                         const toDisplay = Math.min(
                             this.itemsPerLoad - this.grid.children.length,
-                            newMatches.length
+                            matches.length
                         );
-                        const itemsToShow = newMatches.slice(0, toDisplay);
-                        this.displayItems(itemsToShow);
-                        
-                        // Track displayed items
-                        itemsToShow.forEach(id => displayedResults.add(id));
+                        this.displayItems(matches.slice(0, toDisplay));
                         this.searchResultIndex += toDisplay;
                     }
                 }
-                
-                const searchedMillion = (i + 1) * 2;
                 const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Searched ${searchedMillion} million out of 72.3 million IDs, found ${totalMatches} ${matchText}`);
+                this.updateStats(`Searched ${(i + 1)/this.totalChunks} % of IDs, found ${totalMatches} ${matchText}`);
                 
                 // Small delay to prevent UI blocking
                 if (i % 5 === 0) {
@@ -267,8 +253,7 @@ class YouTubeIDFinder {
         this.displayItems(newItems);
         this.searchResultIndex = end;
         
-        const resultText = this.searchResults.length === 1 ? "search result" : "search results";
-        this.updateStats(`Showing ${this.searchResultIndex} of ${this.searchResults.length} ${resultText}`);
+        this.updateStats(`Showing ${this.searchResultIndex} of ${this.searchResults.length} search results`);
         this.updateLoadMoreButton();
     }
     
