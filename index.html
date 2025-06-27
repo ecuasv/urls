@@ -1,16 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>YouTube ID Grid</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube ID Finder</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>YouTube Video IDs</h1>
-  <input type="text" id="search" placeholder="Search words...">
-  <div id="grid"></div>
-  <div id="loading">Loading...</div>
+    <div class="container">
+        <div class="header">
+            <h1>YouTube ID Finder</h1>
+            <p>Search through YouTube video IDs efficiently</p>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search YouTube IDs..." autocomplete="off">
+        </div>
+        
+        <div class="stats" id="stats">
+            Ready to load IDs...
+        </div>
+        
+        <div id="grid"></div>
+        
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            Loading...
+        </div>
+        
+        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">
+            Load More
+        </button>
+        
+        <div class="no-results" id="noResults" style="display: none;">
+            No matching IDs found
+        </div>
+    </div>
 
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
