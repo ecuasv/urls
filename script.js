@@ -85,6 +85,8 @@ class YouTubeIDFinder {
             
             this.displayItems(chunk.slice(0, itemsToShow));
             this.currentDisplayIndex = itemsToShow;
+            
+            this.updateStats(`Showing ${itemsToShow} of ${chunk.length} IDs from chunk 0`);
             this.updateLoadMoreButton();
         } catch (error) {
             console.error("Error loading initial data:", error);
@@ -147,15 +149,9 @@ class YouTubeIDFinder {
         }
         
         // Validate search query
-        if (!/^[a-zA-Z0-9\-_]+$/.test(query)) {
+        if ((!/^[a-zA-Z0-9\-_]+$/.test(query))||(query.length > 11)) {
             this.grid.innerHTML = "";
             this.updateStats("Invalid characters in search");
-            this.noResults.style.display = "block";
-            this.loadMoreBtn.style.display = "none";
-            return;
-        }
-        if (query.length > 11) {
-            this.grid.innerHTML = "";
             this.noResults.style.display = "block";
             this.loadMoreBtn.style.display = "none";
             return;
@@ -199,8 +195,9 @@ class YouTubeIDFinder {
                         this.searchResultIndex += toDisplay;
                     }
                 }
+                const searchedMillion = (i + 1) * 2;
                 const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Searched ${(i + 1)/this.totalChunks} % of IDs, found ${totalMatches} ${matchText}`);
+                this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
                 
                 // Small delay to prevent UI blocking
                 if (i % 5 === 0) {
