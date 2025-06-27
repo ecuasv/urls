@@ -8,36 +8,56 @@ let loadingChunk = false;
 let searchTerm = "";
 let searching = false;
 
-// Load a chunk and optionally filter it
-async function loadChunk(index) {
+let chunkCache = {}; // cache parsed lines
+let chunkDisplayIndex = {}; // track display progress per chunk
+
+async function loadChunk(index, batchSize = 300) {
   if (index >= totalChunks || loadingChunk) return;
   loadingChunk = true;
   loading.style.display = "block";
 
   try {
-    const res = await fetch(`chunk_${index}.txt`);
-    const text = await res.text();
-    const lines = text.split("\n").filter(Boolean);
-
-    let filtered = lines;
-    if (searchTerm) {
-      const lowerSearch = searchTerm.toLowerCase();
-      filtered = lines.filter(id => id.toLowerCase().includes(lowerSearch));
+    // Load and cache chunk if not yet done
+    if (!chunkCache[index]) {
+      const res = await fetch(`chunk_${index}.txt`);
+      const text = await res.text();
+      chunkCache[index] = text.split("\n").filter(Boolean);
+      chunkDisplayIndex[index] = 0;
     }
 
-    for (const id of filtered) {
+    // Filter and display a batch
+    const lines = chunkCache[index];
+    const start = chunkDisplayIndex[index];
+    const end = start + batchSize;
+
+    let batch = lines.slice(start, end);
+    chunkDisplayIndex[index] = end;
+
+    if (searchTerm) {
+      const lowerSearch = searchTerm.toLowerCase();
+      batch = batch.filter(id => id.toLowerCase().includes(lowerSearch));
+    }
+
+    for (const id of batch) {
       const a = document.createElement("a");
       a.href = `https://www.youtube.com/watch?v=${id}`;
       a.target = "_blank";
       a.textContent = id;
       grid.appendChild(a);
     }
+
+    // If more in this chunk to display, keep it current
+    if (chunkDisplayIndex[index] < chunkCache[index].length) {
+      currentChunk = index; // don't increment yet
+    } else {
+      currentChunk = index + 1;
+    }
+
   } catch (err) {
     console.error(`Error loading chunk ${index}:`, err);
   }
 
   loading.style.display = "none";
-  currentChunk++;
   loadingChunk = false;
 }
 
@@ -54,6 +74,12 @@ searchInput.addEventListener("input", () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
     searchTerm = searchInput.value.trim();
+    
+        const validPattern = /^[a-zA-Z0-9\-_]+$/;
+    if (searchTerm && !validPattern.test(searchTerm)) {
+      grid.innerHTML = "";
+      return;
+    }
     grid.innerHTML = "";
     currentChunk = 0;
     searching = !!searchTerm;
