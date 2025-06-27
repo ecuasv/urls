@@ -1,0 +1,40 @@
+body {
+  font-family: sans-serif;
+  margin: 20px;
+}
+
+#search {
+  padding: 10px;
+  font-size: 16px;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 20px;
+}
+
+#grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+#grid a {
+  display: block;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 6px;
+  text-align: center;
+  text-decoration: none;
+  color: #222;
+  transition: background 0.2s;
+}
+
+#grid a:hover {
+  background: #ddd;
+}
+
+#loading {
+  text-align: center;
+  margin: 30px;
+  font-size: 18px;
+  display: none;
+}
