@@ -15,6 +15,7 @@ class YouTubeIDFinder {
         this.isLoading = false;
         this.searchTerm = "";
         this.searchResults = [];
+        const seen = new Set();
         this.searchResultIndex = 0;
         this.searchTimeout = null;
         this.searchController = null;
@@ -166,7 +167,12 @@ class YouTubeIDFinder {
     async performSearch() {
         this.showLoading(true);
         this.updateStats("Searching...");
-        
+        for (const id of matches) {
+  if (!seen.has(id)) {
+    this.searchResults.push(id);
+    seen.add(id);
+  }
+}
         try {
             let totalMatches = 0;
             
