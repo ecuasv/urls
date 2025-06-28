@@ -33,7 +33,7 @@ class YouTubeIDFinder {
             clearTimeout(this.searchTimeout);
             this.searchTimeout = setTimeout(() => {
                 this.handleSearch();
-            }, 500);
+            }, 300);
         });
 
         this.loadMoreBtn.addEventListener("click", () => {
