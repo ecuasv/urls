@@ -52,7 +52,7 @@ class YouTubeIDFinder {
             }
         });
     }
-    async preloadAllChunks() {
+async preloadAllChunks() {
     const preloadPromises = [];
     for (let i = 0; i < this.totalChunks; i++) {
         preloadPromises.push(this.loadChunk(i));
@@ -154,44 +154,46 @@ class YouTubeIDFinder {
         await this.performSearch();
     }
 
-async performSearch() {
-    this.showLoading(true);
-    this.updateStats("Searching...");
+    async performSearch() {
+        this.showLoading(true);
+        this.updateStats("Searching...");
 
-    const seen = new Set();
-    let totalMatches = 0;
+        const seen = new Set();
+        let totalMatches = 0;
 
-    const searchPromises = Array.from({ length: this.totalChunks }, (_, i) =>
-        this.loadChunk(i).then(chunk => {
-            if (this.searchController?.signal.aborted) return;
+        const searchPromises = Array.from({ length: this.totalChunks }, (_, i) =>
+            this.loadChunk(i).then(chunk => {
+                if (this.searchController?.signal.aborted) return;
 
-            for (const id of chunk) {
-                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                    seen.add(id);
-                    this.searchResults.push(id);
-                    totalMatches++;
+                for (const id of chunk) {
+                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                        seen.add(id);
+                        this.searchResults.push(id);
+                        totalMatches++;
+                    }
                 }
-            }
-            // You can update stats here, but DO NOT call displayItems here
-        })
-    );
 
-    await Promise.allSettled(searchPromises);
+                const searchedMillion = (i + 1) * 2;
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
+            })
+        );
 
-    if (this.searchController?.signal.aborted) return;
+        await Promise.allSettled(searchPromises);
 
-    if (this.searchResults.length === 0) {
-        this.noResults.style.display = "block";
-        this.loadMoreBtn.style.display = "none";
-    } else {
-        // Only display results ONCE, after all chunks are done
-        this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
-        this.searchResultIndex = this.itemsPerLoad;
-        this.updateLoadMoreButton();
+        if (this.searchController?.signal.aborted) return;
+
+        if (this.searchResults.length === 0) {
+            this.noResults.style.display = "block";
+            this.loadMoreBtn.style.display = "none";
+        } else {
+            this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
+            this.searchResultIndex = this.itemsPerLoad;
+            this.updateLoadMoreButton();
+        }
+
+        this.showLoading(false);
     }
-
-    this.showLoading(false);
-}
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
@@ -253,3 +255,5 @@ async performSearch() {
 document.addEventListener("DOMContentLoaded", () => {
     new YouTubeIDFinder();
 });
+
+
