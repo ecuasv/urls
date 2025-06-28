@@ -84,21 +84,37 @@ class YouTubeIDFinder {
             this.updateStats("Error loading data");
         }
         this.showLoading(false);
-
-        // Start background preloading after slight delay
-        setTimeout(() => {
-            this.preloadAllChunks();
-        }, 3000);
     }
 
-    async preloadAllChunks() {
-        for (let i = 0; i < this.totalChunks; i++) {
-            await this.loadChunk(i);
-            if (i % 5 === 0) {
-                await new Promise(resolve => setTimeout(resolve, 10));
+    async loadMoreData() {
+        if (this.isLoading) return;
+        this.showLoading(true);
+
+        try {
+            const currentChunk = await this.loadChunk(this.currentDisplayChunk);
+            if (this.currentDisplayIndex < currentChunk.length) {
+                const start = this.currentDisplayIndex;
+                const end = Math.min(start + this.itemsPerLoad, currentChunk.length);
+                this.displayItems(currentChunk.slice(start, end));
+                this.currentDisplayIndex = end;
+            } else {
+                this.currentDisplayChunk++;
+                this.currentDisplayIndex = 0;
+                if (this.currentDisplayChunk < this.totalChunks) {
+                    const nextChunk = await this.loadChunk(this.currentDisplayChunk);
+                    const itemsToShow = Math.min(this.itemsPerLoad, nextChunk.length);
+                    this.displayItems(nextChunk.slice(0, itemsToShow));
+                    this.currentDisplayIndex = itemsToShow;
+                }
             }
+
+            this.updateStats(`Loaded ${this.grid.children.length} IDs total`);
+            this.updateLoadMoreButton();
+        } catch (error) {
+            console.error("Error loading more data:", error);
         }
-        this.updateStats("All chunks preloaded for faster searching.");
+
+        this.showLoading(false);
     }
 
     async handleSearch() {
@@ -137,42 +153,36 @@ class YouTubeIDFinder {
 
         const seen = new Set();
         let totalMatches = 0;
-        const batchSize = 5;
 
-        for (let i = 0; i < this.totalChunks; i += batchSize) {
-            const batch = [];
+        const searchPromises = Array.from({ length: this.totalChunks }, (_, i) =>
+            this.loadChunk(i).then(chunk => {
+                if (this.searchController?.signal.aborted) return;
 
-            for (let j = i; j < Math.min(i + batchSize, this.totalChunks); j++) {
-                batch.push(
-                    this.loadChunk(j).then(chunk => {
-                        for (const id of chunk) {
-                            if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                                seen.add(id);
-                                this.searchResults.push(id);
-                                totalMatches++;
-                            }
-                        }
-                    })
-                );
-            }
+                for (const id of chunk) {
+                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                        seen.add(id);
+                        this.searchResults.push(id);
+                        totalMatches++;
+                    }
+                }
 
-            await Promise.allSettled(batch);
+                const searchedMillion = (i + 1) * 2;
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
+            })
+        );
 
-            const searchedMillion = Math.min(i + batchSize, this.totalChunks) * 2;
-            this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} matches`);
+        await Promise.allSettled(searchPromises);
 
-            await new Promise(resolve => setTimeout(resolve, 10));
-        }
+        if (this.searchController?.signal.aborted) return;
 
-        if (!this.searchController?.signal.aborted) {
-            if (this.searchResults.length === 0) {
-                this.noResults.style.display = "block";
-                this.loadMoreBtn.style.display = "none";
-            } else {
-                this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
-                this.searchResultIndex = this.itemsPerLoad;
-                this.updateLoadMoreButton();
-            }
+        if (this.searchResults.length === 0) {
+            this.noResults.style.display = "block";
+            this.loadMoreBtn.style.display = "none";
+        } else {
+            this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
+            this.searchResultIndex = this.itemsPerLoad;
+            this.updateLoadMoreButton();
         }
 
         this.showLoading(false);
