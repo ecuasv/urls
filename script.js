@@ -161,91 +161,56 @@ async performSearch() {
 
     const seen = new Set();
     let totalMatches = 0;
+    let chunksCompleted = 0;
 
-    try {
-        // First search found.txt for priority results
-        try {
-            const foundResponse = await fetch("found.txt");
-            if (foundResponse.ok) {
-                const foundText = await foundResponse.text();
-                const foundIds = foundText.split("\n").filter(id => id.trim());
-                
-                for (const id of foundIds) {
-                    const trimmedId = id.trim();
-                    if (trimmedId.toLowerCase().includes(this.searchTerm) && !seen.has(trimmedId)) {
-                        seen.add(trimmedId);
-                        this.searchResults.push(trimmedId);
-                        totalMatches++;
-                    }
-                }
-                
-                // Display priority results immediately
-                if (this.searchResults.length > 0) {
-                    const initialDisplay = this.searchResults.slice(0, this.itemsPerLoad);
-                    this.displayItems(initialDisplay);
-                    this.searchResultIndex = initialDisplay.length;
-                }
-            }
-        } catch (error) {
-            console.error("Error loading found.txt:", error);
+    const allChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
+
+    const displayBatch = (matches) => {
+        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
+        if (newItems.length > 0) {
+            this.displayItems(newItems);
+            this.searchResultIndex += newItems.length;
         }
+    };
 
-        // Then search all chunks
-        const searchPromises = Array.from({ length: this.totalChunks }, async (_, i) => {
-            if (this.searchController?.signal.aborted) return 0;
-            
-            const chunk = await this.loadChunk(i);
-            let localMatches = 0;
-            
+    for (const chunkIndex of allChunks) {
+        (chunkIndex === -1
+            ? fetch("found.txt").then(res => res.ok ? res.text() : "").then(text => text.split("\n"))
+            : this.loadChunk(chunkIndex)
+        ).then(chunk => {
+            if (this.searchController?.signal.aborted) return;
+
+            const localMatches = [];
             for (const id of chunk) {
-                const trimmedId = id.trim();
-                if (trimmedId.toLowerCase().includes(this.searchTerm) && !seen.has(trimmedId)) {
-                    seen.add(trimmedId);
-                    this.searchResults.push(trimmedId);
-                    localMatches++;
+                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                    seen.add(id);
+                    this.searchResults.push(id);
+                    localMatches.push(id);
                     totalMatches++;
                 }
             }
 
-            // Update progress
-            const searchedMillion = (i + 1) * 2;
-            const matchText = totalMatches === 1 ? "match" : "matches";
-            this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
-            
-            return localMatches;
-        });
+            displayBatch(localMatches);
 
-        await Promise.allSettled(searchPromises);
-
-        if (this.searchController?.signal.aborted) return;
-
-        // Final display logic
-        if (this.searchResults.length === 0) {
-            this.noResults.style.display = "block";
-            this.loadMoreBtn.style.display = "none";
-            this.updateStats("No matches found");
-        } else {
-            // If we haven't displayed all results yet, show more
-            if (this.searchResultIndex < this.searchResults.length) {
-                const remainingToShow = Math.min(
-                    this.itemsPerLoad - (this.searchResultIndex % this.itemsPerLoad),
-                    this.searchResults.length - this.searchResultIndex
-                );
-                if (remainingToShow > 0) {
-                    this.displayItems(this.searchResults.slice(this.searchResultIndex, this.searchResultIndex + remainingToShow));
-                    this.searchResultIndex += remainingToShow;
-                }
+            if (chunkIndex >= 0) {
+                const searchedMillion = (chunkIndex + 1) * 2;
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
             }
-            
-            this.updateStats(`Found ${this.searchResults.length} total matches`);
-            this.updateLoadMoreButton();
-        }
 
-    } catch (error) {
-        console.error("Search error:", error);
-        this.updateStats("Search error occurred");
-    } finally {
-        this.showLoading(false);
+            chunksCompleted++;
+            if (chunksCompleted === allChunks.length && !this.searchController?.signal.aborted) {
+                if (totalMatches === 0) {
+                    this.noResults.style.display = "block";
+                    this.loadMoreBtn.style.display = "none";
+                } else {
+                    this.updateLoadMoreButton();
+                }
+                this.showLoading(false);
+            }
+        }).catch(err => {
+            console.error(`Error loading chunk ${chunkIndex}:`, err);
+        });
     }
 }
 
@@ -273,21 +238,17 @@ async performSearch() {
         });
     }
 
-clearSearch() {
-    if (this.searchController) {
-        this.searchController.abort();
-    }
-    
-    this.searchTerm = "";
-    this.searchResults = [];
-    this.searchResultIndex = 0;
-    this.grid.innerHTML = "";
-    this.noResults.style.display = "none";
+    clearSearch() {
+        this.searchTerm = "";
+        this.searchResults = [];
+        this.searchResultIndex = 0;
+        this.grid.innerHTML = "";
+        this.noResults.style.display = "none";
 
-    this.currentDisplayChunk = 0;
-    this.currentDisplayIndex = 0;
-    this.loadInitialData();
-}
+        this.currentDisplayChunk = 0;
+        this.currentDisplayIndex = 0;
+        this.loadInitialData();
+    }
 
     updateLoadMoreButton() {
         const hasMore = this.searchTerm
@@ -313,5 +274,6 @@ clearSearch() {
 document.addEventListener("DOMContentLoaded", () => {
     new YouTubeIDFinder();
 });
+
 
 
