@@ -25,6 +25,7 @@ class YouTubeIDFinder {
     init() {
         this.setupEventListeners();
         this.loadInitialData();
+        this.preloadAllChunks();
     }
 
     setupEventListeners() {
@@ -70,6 +71,13 @@ class YouTubeIDFinder {
             return [];
         }
     }
+async preloadAllChunks() {
+    const preloadPromises = [];
+    for (let i = 0; i < this.totalChunks; i++) {
+        preloadPromises.push(this.loadChunk(i));
+    }
+    await Promise.allSettled(preloadPromises);
+}
 
     async loadInitialData() {
         this.showLoading(true);
