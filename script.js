@@ -25,7 +25,6 @@ class YouTubeIDFinder {
     init() {
         this.setupEventListeners();
         this.loadInitialData();
-        this.preloadAllChunks();
     }
 
     setupEventListeners() {
@@ -52,13 +51,7 @@ class YouTubeIDFinder {
             }
         });
     }
-async preloadAllChunks() {
-    const preloadPromises = [];
-    for (let i = 0; i < this.totalChunks; i++) {
-        preloadPromises.push(this.loadChunk(i));
-    }
-    await Promise.allSettled(preloadPromises);
-}
+
     async loadChunk(chunkIndex) {
         if (this.chunkCache.has(chunkIndex)) {
             return this.chunkCache.get(chunkIndex);
