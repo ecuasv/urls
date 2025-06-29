@@ -18,15 +18,14 @@ class YouTubeIDFinder {
         this.searchResultIndex = 0;
         this.searchTimeout = null;
         this.searchController = null;
-        this.isPreloaded = false; // Track preload status
-        this.displayedIds = new Set(); // Track displayed IDs globally
 
         this.init();
     }
 
     init() {
         this.setupEventListeners();
-        this.loadInitialDataAndPreload();
+        this.loadInitialData();
+        this.preloadAllChunks();
     }
 
     setupEventListeners() {
@@ -53,47 +52,13 @@ class YouTubeIDFinder {
             }
         });
     }
-
-    async loadInitialDataAndPreload() {
-        this.showLoading(true);
-        this.updateStats("Loading initial data and preloading chunks...");
-        
-        try {
-            // Load initial data first
-            const chunk = await this.loadChunk(0);
-            const itemsToShow = Math.min(this.itemsPerLoad, chunk.length);
-            const initialItems = chunk.slice(0, itemsToShow);
-            this.displayItems(initialItems);
-            this.currentDisplayIndex = itemsToShow;
-            
-            // Track initially displayed IDs
-            initialItems.forEach(id => this.displayedIds.add(id.toLowerCase()));
-            
-            this.updateLoadMoreButton();
-            this.updateStats("Initial data loaded, preloading remaining chunks...");
-            
-            // Now preload remaining chunks in background
-            await this.preloadRemainingChunks();
-            
-            this.isPreloaded = true;
-            this.updateStats(`Loaded ${this.grid.children.length} IDs total - All chunks preloaded`);
-        } catch (error) {
-            console.error("Error during initialization:", error);
-            this.updateStats("Error loading data");
-        }
-        
-        this.showLoading(false);
+async preloadAllChunks() {
+    const preloadPromises = [];
+    for (let i = 0; i < this.totalChunks; i++) {
+        preloadPromises.push(this.loadChunk(i));
     }
-
-    async preloadRemainingChunks() {
-        const preloadPromises = [];
-        // Start from chunk 1 since chunk 0 is already loaded
-        for (let i = 1; i < this.totalChunks; i++) {
-            preloadPromises.push(this.loadChunk(i));
-        }
-        await Promise.allSettled(preloadPromises);
-    }
-
+    await Promise.allSettled(preloadPromises);
+}
     async loadChunk(chunkIndex) {
         if (this.chunkCache.has(chunkIndex)) {
             return this.chunkCache.get(chunkIndex);
@@ -113,6 +78,21 @@ class YouTubeIDFinder {
         }
     }
 
+    async loadInitialData() {
+        this.showLoading(true);
+        try {
+            const chunk = await this.loadChunk(0);
+            const itemsToShow = Math.min(this.itemsPerLoad, chunk.length);
+            this.displayItems(chunk.slice(0, itemsToShow));
+            this.currentDisplayIndex = itemsToShow;
+            this.updateLoadMoreButton();
+        } catch (error) {
+            console.error("Error loading initial data:", error);
+            this.updateStats("Error loading data");
+        }
+        this.showLoading(false);
+    }
+
     async loadMoreData() {
         if (this.isLoading) return;
         this.showLoading(true);
@@ -122,9 +102,7 @@ class YouTubeIDFinder {
             if (this.currentDisplayIndex < currentChunk.length) {
                 const start = this.currentDisplayIndex;
                 const end = Math.min(start + this.itemsPerLoad, currentChunk.length);
-                const items = currentChunk.slice(start, end);
-                this.displayItems(items);
-                items.forEach(id => this.displayedIds.add(id.toLowerCase()));
+                this.displayItems(currentChunk.slice(start, end));
                 this.currentDisplayIndex = end;
             } else {
                 this.currentDisplayChunk++;
@@ -132,9 +110,7 @@ class YouTubeIDFinder {
                 if (this.currentDisplayChunk < this.totalChunks) {
                     const nextChunk = await this.loadChunk(this.currentDisplayChunk);
                     const itemsToShow = Math.min(this.itemsPerLoad, nextChunk.length);
-                    const items = nextChunk.slice(0, itemsToShow);
-                    this.displayItems(items);
-                    items.forEach(id => this.displayedIds.add(id.toLowerCase()));
+                    this.displayItems(nextChunk.slice(0, itemsToShow));
                     this.currentDisplayIndex = itemsToShow;
                 }
             }
@@ -162,7 +138,6 @@ class YouTubeIDFinder {
 
         if (!/^[a-zA-Z0-9\-_]+$/.test(query) || query.length > 11) {
             this.grid.innerHTML = "";
-            this.displayedIds.clear();
             this.updateStats("Invalid characters in search");
             this.noResults.style.display = "block";
             this.loadMoreBtn.style.display = "none";
@@ -173,15 +148,9 @@ class YouTubeIDFinder {
         this.searchResults = [];
         this.searchResultIndex = 0;
         this.grid.innerHTML = "";
-        this.displayedIds.clear();
         this.noResults.style.display = "none";
 
         this.searchController = new AbortController();
-        
-        if (!this.isPreloaded) {
-            this.updateStats("Still preloading chunks, search may be slower...");
-        }
-        
         await this.performSearch();
     }
 
@@ -197,9 +166,8 @@ class YouTubeIDFinder {
                 if (this.searchController?.signal.aborted) return;
 
                 for (const id of chunk) {
-                    const lowerCaseId = id.toLowerCase();
-                    if (lowerCaseId.includes(this.searchTerm) && !seen.has(lowerCaseId)) {
-                        seen.add(lowerCaseId);
+                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                        seen.add(id);
                         this.searchResults.push(id);
                         totalMatches++;
                     }
@@ -219,9 +187,7 @@ class YouTubeIDFinder {
             this.noResults.style.display = "block";
             this.loadMoreBtn.style.display = "none";
         } else {
-            const initialResults = this.searchResults.slice(0, this.itemsPerLoad);
-            this.displayItems(initialResults);
-            initialResults.forEach(id => this.displayedIds.add(id.toLowerCase()));
+            this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
             this.searchResultIndex = this.itemsPerLoad;
             this.updateLoadMoreButton();
         }
@@ -232,9 +198,7 @@ class YouTubeIDFinder {
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
         const end = Math.min(this.searchResultIndex + this.itemsPerLoad, this.searchResults.length);
-        const items = this.searchResults.slice(this.searchResultIndex, end);
-        this.displayItems(items);
-        items.forEach(id => this.displayedIds.add(id.toLowerCase()));
+        this.displayItems(this.searchResults.slice(this.searchResultIndex, end));
         this.searchResultIndex = end;
         this.updateStats(`Showing ${this.searchResultIndex} of ${this.searchResults.length} search results`);
         this.updateLoadMoreButton();
@@ -260,12 +224,11 @@ class YouTubeIDFinder {
         this.searchResults = [];
         this.searchResultIndex = 0;
         this.grid.innerHTML = "";
-        this.displayedIds.clear();
         this.noResults.style.display = "none";
 
         this.currentDisplayChunk = 0;
         this.currentDisplayIndex = 0;
-        this.loadInitialDataAndPreload();
+        this.loadInitialData();
     }
 
     updateLoadMoreButton() {
@@ -292,3 +255,5 @@ class YouTubeIDFinder {
 document.addEventListener("DOMContentLoaded", () => {
     new YouTubeIDFinder();
 });
+
+
