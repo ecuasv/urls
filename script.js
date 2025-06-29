@@ -154,46 +154,56 @@ async preloadAllChunks() {
         await this.performSearch();
     }
 
-    async performSearch() {
-        this.showLoading(true);
-        this.updateStats("Searching...");
+async performSearch() {
+    this.showLoading(true);
+    this.updateStats("Searching...");
 
-        const seen = new Set();
-        let totalMatches = 0;
+    const seen = new Set();
+    let totalMatches = 0;
 
-        const searchPromises = Array.from({ length: this.totalChunks }, (_, i) =>
-            this.loadChunk(i).then(chunk => {
-                if (this.searchController?.signal.aborted) return;
+    const allChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
 
-                for (const id of chunk) {
-                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                        seen.add(id);
-                        this.searchResults.push(id);
-                        totalMatches++;
-                    }
+    const searchPromises = allChunks.map(chunkIndex => {
+        return (chunkIndex === -1
+            ? fetch("found.txt").then(res => res.ok ? res.text() : "").then(text => text.split("\n"))
+            : this.loadChunk(chunkIndex)
+        ).then(chunk => {
+            if (this.searchController?.signal.aborted) return;
+
+            for (const id of chunk) {
+                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                    seen.add(id);
+                    this.searchResults.push(id);
+                    totalMatches++;
                 }
+            }
 
-                const searchedMillion = (i + 1) * 2;
+            if (chunkIndex >= 0) {
+                const searchedMillion = (chunkIndex + 1) * 2;
                 const matchText = totalMatches === 1 ? "match" : "matches";
                 this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
-            })
-        );
+            }
+        }).catch(err => {
+            if (chunkIndex === -1) console.warn("Could not load", err);
+            else console.error(`Chunk ${chunkIndex} error:`, err);
+        });
+    });
 
-        await Promise.allSettled(searchPromises);
+    await Promise.allSettled(searchPromises);
 
-        if (this.searchController?.signal.aborted) return;
+    if (this.searchController?.signal.aborted) return;
 
-        if (this.searchResults.length === 0) {
-            this.noResults.style.display = "block";
-            this.loadMoreBtn.style.display = "none";
-        } else {
-            this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
-            this.searchResultIndex = this.itemsPerLoad;
-            this.updateLoadMoreButton();
-        }
-
-        this.showLoading(false);
+    if (this.searchResults.length === 0) {
+        this.noResults.style.display = "block";
+        this.loadMoreBtn.style.display = "none";
+    } else {
+        this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
+        this.searchResultIndex = this.itemsPerLoad;
+        this.updateLoadMoreButton();
     }
+
+    this.showLoading(false);
+}
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
