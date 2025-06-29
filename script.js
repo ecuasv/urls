@@ -162,44 +162,61 @@ async performSearch() {
     const seen = new Set();
     let totalMatches = 0;
 
-    const allChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
-
-    const searchPromises = allChunks.map(chunkIndex => {
-        return (chunkIndex === -1
-            ? fetch("found.txt").then(res => res.ok ? res.text() : "").then(text => text.split("\n"))
-            : this.loadChunk(chunkIndex)
-        ).then(chunk => {
-            if (this.searchController?.signal.aborted) return;
-
-            for (const id of chunk) {
-                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                    seen.add(id);
-                    this.searchResults.push(id);
-                    totalMatches++;
-                }
+    // 1. Search found.txt first
+    try {
+        const response = await fetch("found.txt");
+        let foundIds = [];
+        if (response.ok) {
+            const text = await response.text();
+            foundIds = text.split("\n").filter(id => id.trim());
+        }
+        for (const id of foundIds) {
+            if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                seen.add(id);
+                this.searchResults.push(id);
+                totalMatches++;
             }
+        }
+        if (this.searchResults.length > 0) {
+            this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
+            this.searchResultIndex = this.itemsPerLoad;
+            this.updateStats(`Found ${this.searchResults.length} matches in known IDs`);
+            this.updateLoadMoreButton();
+        }
+    } catch (err) {
+        console.warn("Could not load found.txt", err);
+    }
 
-            if (chunkIndex >= 0) {
-                const searchedMillion = (chunkIndex + 1) * 2;
-                const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
+    // 2. Now search the rest of the chunks (in parallel)
+    const chunkSearchPromises = Array.from({ length: this.totalChunks }, (_, i) => i).map(async chunkIndex => {
+        const chunk = await this.loadChunk(chunkIndex);
+        if (this.searchController?.signal.aborted) return;
+        let newMatches = 0;
+        for (const id of chunk) {
+            if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                seen.add(id);
+                this.searchResults.push(id);
+                newMatches++;
+                totalMatches++;
             }
-        }).catch(err => {
-            if (chunkIndex === -1) console.warn("Could not load", err);
-            else console.error(`Chunk ${chunkIndex} error:`, err);
-        });
+        }
+        if (newMatches > 0) {
+            // Optional: You can update results live as they are found, or just update stats
+            // this.displayItems(this.searchResults.slice(0, this.searchResultIndex + newMatches));
+            // this.searchResultIndex += newMatches;
+            this.updateStats(`Searched ${(chunkIndex + 1) * 2} million out of 74 million IDs, found ${totalMatches} matches`);
+        }
     });
 
-    await Promise.allSettled(searchPromises);
+    await Promise.allSettled(chunkSearchPromises);
 
     if (this.searchController?.signal.aborted) return;
 
+    // If there were no results at all
     if (this.searchResults.length === 0) {
         this.noResults.style.display = "block";
         this.loadMoreBtn.style.display = "none";
     } else {
-        this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
-        this.searchResultIndex = this.itemsPerLoad;
         this.updateLoadMoreButton();
     }
 
