@@ -79,20 +79,25 @@ async preloadAllChunks() {
     await Promise.allSettled(preloadPromises);
 }
 
-    async loadInitialData() {
-        this.showLoading(true);
-        try {
-            const chunk = await this.loadChunk(0);
-            const itemsToShow = Math.min(this.itemsPerLoad, chunk.length);
-            this.displayItems(chunk.slice(0, itemsToShow));
-            this.currentDisplayIndex = itemsToShow;
-            this.updateLoadMoreButton();
-        } catch (error) {
-            console.error("Error loading initial data:", error);
-            this.updateStats("Error loading data");
+async loadInitialData() {
+    this.showLoading(true);
+    try {
+        const initialDataEl = document.getElementById("initial-ids");
+        let initialIds = [];
+        if (initialDataEl) {
+            initialIds = JSON.parse(initialDataEl.textContent);
         }
-        this.showLoading(false);
+        const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
+        this.displayItems(initialIds.slice(0, itemsToShow));
+        this.currentDisplayIndex = itemsToShow;
+        this.updateLoadMoreButton();
+        this.initialLoaded = true;
+    } catch (error) {
+        console.error("Error loading initial data:", error);
+        this.updateStats("Error loading data");
     }
+    this.showLoading(false);
+}
 
     async loadMoreData() {
         if (this.isLoading) return;
@@ -223,20 +228,19 @@ async performSearch() {
         this.updateLoadMoreButton();
     }
 
-    displayItems(items) {
-        const fragment = document.createDocumentFragment();
-        for (const id of items) {
-            const link = document.createElement("a");
-            link.href = `https://www.youtube.com/watch?v=${id}`;
-            link.target = "_blank";
-            link.textContent = id;
-            link.rel = "noopener noreferrer";
-            fragment.appendChild(link);
-        }
-        requestAnimationFrame(() => {
-            this.grid.appendChild(fragment);
-        });
-    }
+displayItems(items) {
+    const formattedItems = items.map(id => {
+        const link = document.createElement("a");
+        link.href = `https://www.youtube.com/watch?v=${id}`;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.innerHTML = this.highlightMatch(id); // highlight match
+        return link;
+    });
+    requestAnimationFrame(() => {
+        this.grid.items = Array.from(this.grid.items || []).concat(formattedItems);
+    });
+}
 
     clearSearch() {
         this.searchTerm = "";
