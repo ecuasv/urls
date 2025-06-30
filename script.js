@@ -7,7 +7,7 @@ class YouTubeIDFinder {
         this.loadMoreBtn = document.getElementById("loadMoreBtn");
         this.noResults = document.getElementById("noResults");
 
-        this.totalChunks = 37;
+        this.totalChunks = 39;
         this.chunkCache = new Map();
         this.currentDisplayChunk = 0;
         this.currentDisplayIndex = 0;
@@ -200,7 +200,7 @@ async performSearch() {
             if (chunkIndex >= 0) {
                 const searchedMillion = (chunkIndex + 1) * 2;
                 const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Searched ${searchedMillion} million out of 74 million IDs, found ${totalMatches} ${matchText}`);
+                this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
             }
 
             chunksCompleted++;
