@@ -276,7 +276,7 @@ async performSearch() {
     }
     highlightMatch(id) {
     if (!this.searchTerm) return id;
-    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const regex = new RegExp(`(${escaped})`, 'ig');
     return id.replace(regex, '<mark>$1</mark>');
 }
