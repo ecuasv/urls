@@ -234,7 +234,7 @@ async performSearch() {
             const link = document.createElement("a");
             link.href = `https://www.youtube.com/watch?v=${id}`;
             link.target = "_blank";
-            link.textContent = id;
+            link.innerHTML = this.highlightMatch(id);
             link.rel = "noopener noreferrer";
             fragment.appendChild(link);
         }
@@ -274,6 +274,12 @@ async performSearch() {
     updateStats(message) {
         this.stats.textContent = message;
     }
+    highlightMatch(id) {
+    if (!this.searchTerm) return id;
+    const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escaped})`, 'ig');
+    return id.replace(regex, '<mark>$1</mark>');
+}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
