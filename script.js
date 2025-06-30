@@ -79,20 +79,25 @@ async preloadAllChunks() {
     await Promise.allSettled(preloadPromises);
 }
 
-    async loadInitialData() {
-        this.showLoading(true);
-        try {
-            const chunk = await this.loadChunk(0);
-            const itemsToShow = Math.min(this.itemsPerLoad, chunk.length);
-            this.displayItems(chunk.slice(0, itemsToShow));
-            this.currentDisplayIndex = itemsToShow;
-            this.updateLoadMoreButton();
-        } catch (error) {
-            console.error("Error loading initial data:", error);
-            this.updateStats("Error loading data");
+async loadInitialData() {
+    this.showLoading(true);
+    try {
+        const initialDataEl = document.getElementById("initial-ids");
+        let initialIds = [];
+        if (initialDataEl) {
+            initialIds = JSON.parse(initialDataEl.textContent);
         }
-        this.showLoading(false);
+        const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
+        this.displayItems(initialIds.slice(0, itemsToShow));
+        this.currentDisplayIndex = itemsToShow;
+        this.updateLoadMoreButton();
+        this.initialLoaded = true;
+    } catch (error) {
+        console.error("Error loading initial data:", error);
+        this.updateStats("Error loading data");
     }
+    this.showLoading(false);
+}
 
     async loadMoreData() {
         if (this.isLoading) return;
