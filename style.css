@@ -135,3 +135,9 @@ body {
     padding: 40px;
     font-size: 16px;
 }
+mark {
+    background-color: #DFCF6B;
+    color: inherit;
+    padding: 0 2px;
+    border-radius: 3px;
+}
