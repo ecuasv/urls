@@ -415,12 +415,7 @@ class YouTubeIDFinder {
 
     highlightMatch(id) {
         if (!this.searchTerm) return id;
-        const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\    highlightMatch(id) {
-        if (!this.searchTerm) return id;
         const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        const regex = new RegExp(`(${escaped})`, 'ig');
-        return id.replace(regex, '<mark>$1</mark>');
-    }');
         const regex = new RegExp(`(${escaped})`, 'ig');
         return id.replace(regex, '<mark>$1</mark>');
     }
