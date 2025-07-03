@@ -21,36 +21,69 @@ class YouTubeIDFinder {
 
         this.init();
     }
-detectDeviceClass() {
-    const ua = navigator.userAgent;
-    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
-    return isMobile ? "mobile" : "desktop";
-}
+
+    detectDeviceClass() {
+        const ua = navigator.userAgent;
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+        return isMobile ? "mobile" : "desktop";
+    }
+
     init() {
+        this.deviceClass = this.detectDeviceClass();
+        
+        if (this.deviceClass === "mobile") {
+            // On mobile, only search found.txt
+            this.allowedChunks = [-1];
+            this.itemsPerLoad = 50;
+        } else {
+            // On desktop, search all chunks by default
+            this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
+            this.itemsPerLoad = 200;
+        }
+
         this.setupEventListeners();
         this.loadInitialData();
         this.preloadAllChunks();
-        this.deviceClass = this.detectDeviceClass();
-if (this.deviceClass === "mobile") {
-    // On mobile, only search found.txt
-    this.allowedChunks = [-1];
-    this.itemsPerLoad = 50;
-} else {
-    // On desktop, search all chunks by default
-    this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
-    this.itemsPerLoad = 200;
-}
+        this.setupLimitSearchButton();
+        this.setupClearSearchButton();
+    }
+
+    setupLimitSearchButton() {
         this.limitSearchBtn = document.getElementById("limitSearchBtn");
 
-if (this.deviceClass === "desktop") {
-    this.limitSearchBtn.style.display = "block";
-    this.limitSearchBtn.addEventListener("click", () => {
-        this.allowedChunks = [-1];
-        this.clearSearch();
-        this.updateStats("Limited search mode activated: searching only known words");
-        this.limitSearchBtn.style.display = "none"; // Hide button after use
-    });
-}
+        if (this.deviceClass === "desktop") {
+            this.limitSearchBtn.style.display = "block";
+            this.limitSearchBtn.addEventListener("click", () => {
+                this.allowedChunks = [-1]; // Only search found.txt
+                this.clearSearch();
+                this.updateStats("Limited search mode activated: searching only known words");
+                this.limitSearchBtn.style.display = "none"; // Hide button after use
+            });
+        }
+    }
+
+    setupClearSearchButton() {
+        // Create clear search button
+        const clearSearchBtn = document.createElement("button");
+        clearSearchBtn.id = "clearSearchBtn";
+        clearSearchBtn.textContent = "Clear Search";
+        clearSearchBtn.style.display = "none";
+        clearSearchBtn.className = "clear-search-btn";
+        
+        // Insert it after the search input
+        const searchContainer = document.querySelector(".search-container");
+        searchContainer.appendChild(clearSearchBtn);
+
+        clearSearchBtn.addEventListener("click", () => {
+            this.searchInput.value = "";
+            this.clearSearch();
+            clearSearchBtn.style.display = "none";
+        });
+
+        // Show/hide clear button based on search input
+        this.searchInput.addEventListener("input", () => {
+            clearSearchBtn.style.display = this.searchInput.value.trim() ? "inline-block" : "none";
+        });
     }
 
     setupEventListeners() {
@@ -96,42 +129,43 @@ if (this.deviceClass === "desktop") {
             return [];
         }
     }
-async preloadAllChunks() {
-    const preloadPromises = [];
-    preloadPromises.push(
-        fetch("found.txt")
-            .then(res => res.ok ? res.text() : "")
-            .then(text => text.split("\n"))
-            .then(ids => this.chunkCache.set(-1, ids))
-            .catch(err => console.error("Error preloading found.txt:", err))
-    );
 
-    for (let i = 0; i < this.totalChunks; i++) {
-        preloadPromises.push(this.loadChunk(i));
-    }
+    async preloadAllChunks() {
+        const preloadPromises = [];
+        preloadPromises.push(
+            fetch("found.txt")
+                .then(res => res.ok ? res.text() : "")
+                .then(text => text.split("\n").filter(id => id.trim()))
+                .then(ids => this.chunkCache.set(-1, ids))
+                .catch(err => console.error("Error preloading found.txt:", err))
+        );
 
-    await Promise.allSettled(preloadPromises);
-}
-
-async loadInitialData() {
-    this.showLoading(true);
-    try {
-        const initialDataEl = document.getElementById("initial-ids");
-        let initialIds = [];
-        if (initialDataEl) {
-            initialIds = JSON.parse(initialDataEl.textContent);
+        for (let i = 0; i < this.totalChunks; i++) {
+            preloadPromises.push(this.loadChunk(i));
         }
-        const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
-        this.displayItems(initialIds.slice(0, itemsToShow));
-        this.currentDisplayIndex = itemsToShow;
-        this.updateLoadMoreButton();
-        this.initialLoaded = true;
-    } catch (error) {
-        console.error("Error loading initial data:", error);
-        this.updateStats("Error loading data");
+
+        await Promise.allSettled(preloadPromises);
     }
-    this.showLoading(false);
-}
+
+    async loadInitialData() {
+        this.showLoading(true);
+        try {
+            const initialDataEl = document.getElementById("initial-ids");
+            let initialIds = [];
+            if (initialDataEl) {
+                initialIds = JSON.parse(initialDataEl.textContent);
+            }
+            const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
+            this.displayItems(initialIds.slice(0, itemsToShow));
+            this.currentDisplayIndex = itemsToShow;
+            this.updateLoadMoreButton();
+            this.initialLoaded = true;
+        } catch (error) {
+            console.error("Error loading initial data:", error);
+            this.updateStats("Error loading data");
+        }
+        this.showLoading(false);
+    }
 
     async loadMoreData() {
         if (this.isLoading) return;
@@ -194,65 +228,68 @@ async loadInitialData() {
         await this.performSearch();
     }
 
-async performSearch() {
-    this.showLoading(true);
-    this.updateStats("Searching...");
+    async performSearch() {
+        this.showLoading(true);
+        this.updateStats("Searching...");
 
-    const seen = new Set();
-    let totalMatches = 0;
-    let chunksCompleted = 0;
+        const seen = new Set();
+        let totalMatches = 0;
+        let chunksCompleted = 0;
 
-    const allChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
-
-    const displayBatch = (matches) => {
-        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
-        if (newItems.length > 0) {
-            this.displayItems(newItems);
-            this.searchResultIndex += newItems.length;
-        }
-    };
-
-for (const chunkIndex of allChunks) {
-    const promise = chunkIndex === -1
-        ? Promise.resolve(this.chunkCache.get(-1) || [])
-        : this.loadChunk(chunkIndex);
-
-    promise.then(chunk => {
-        if (this.searchController?.signal.aborted) return;
-
-        const localMatches = [];
-        for (const id of chunk) {
-            if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                seen.add(id);
-                this.searchResults.push(id);
-                localMatches.push(id);
-                totalMatches++;
+        const displayBatch = (matches) => {
+            const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
+            if (newItems.length > 0) {
+                this.displayItems(newItems);
+                this.searchResultIndex += newItems.length;
             }
-        }
+        };
 
-        displayBatch(localMatches);
+        // Use allowedChunks instead of all chunks
+        for (const chunkIndex of this.allowedChunks) {
+            const promise = chunkIndex === -1
+                ? Promise.resolve(this.chunkCache.get(-1) || [])
+                : this.loadChunk(chunkIndex);
 
-        if (chunkIndex >= 0) {
-            const searchedMillion = (chunkIndex + 1) * 2;
-            const matchText = totalMatches === 1 ? "match" : "matches";
-            this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
-        }
+            promise.then(chunk => {
+                if (this.searchController?.signal.aborted) return;
 
-        chunksCompleted++;
-        if (chunksCompleted === allChunks.length && !this.searchController?.signal.aborted) {
-            if (totalMatches === 0) {
-                this.noResults.style.display = "block";
-                this.loadMoreBtn.style.display = "none";
-            } else {
-                this.updateLoadMoreButton();
-            }
-            this.showLoading(false);
+                const localMatches = [];
+                for (const id of chunk) {
+                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                        seen.add(id);
+                        this.searchResults.push(id);
+                        localMatches.push(id);
+                        totalMatches++;
+                    }
+                }
+
+                displayBatch(localMatches);
+
+                if (chunkIndex >= 0) {
+                    const searchedMillion = (chunkIndex + 1) * 2;
+                    const matchText = totalMatches === 1 ? "match" : "matches";
+                    this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+                } else if (chunkIndex === -1) {
+                    // Searching only found.txt
+                    const matchText = totalMatches === 1 ? "match" : "matches";
+                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
+                }
+
+                chunksCompleted++;
+                if (chunksCompleted === this.allowedChunks.length && !this.searchController?.signal.aborted) {
+                    if (totalMatches === 0) {
+                        this.noResults.style.display = "block";
+                        this.loadMoreBtn.style.display = "none";
+                    } else {
+                        this.updateLoadMoreButton();
+                    }
+                    this.showLoading(false);
+                }
+            }).catch(err => {
+                console.error(`Error loading chunk ${chunkIndex}:`, err);
+            });
         }
-    }).catch(err => {
-        console.error(`Error loading chunk ${chunkIndex}:`, err);
-    });
-}
-}
+    }
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
@@ -309,12 +346,13 @@ for (const chunkIndex of allChunks) {
     updateStats(message) {
         this.stats.textContent = message;
     }
+
     highlightMatch(id) {
-    if (!this.searchTerm) return id;
-    const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escaped})`, 'ig');
-    return id.replace(regex, '<mark>$1</mark>');
-}
+        if (!this.searchTerm) return id;
+        const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escaped})`, 'ig');
+        return id.replace(regex, '<mark>$1</mark>');
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
