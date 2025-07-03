@@ -187,49 +187,45 @@ async performSearch() {
         }
     };
 
-    for (const chunkIndex of allChunks) {
-         const promise = chunkIndex === -1
+for (const chunkIndex of allChunks) {
+    const promise = chunkIndex === -1
         ? Promise.resolve(this.chunkCache.get(-1) || [])
         : this.loadChunk(chunkIndex);
+
     promise.then(chunk => {
-        (chunkIndex === -1
-            ? fetch("found.txt").then(res => res.ok ? res.text() : "").then(text => text.split("\n"))
-            : this.loadChunk(chunkIndex)
-        ).then(chunk => {
-            if (this.searchController?.signal.aborted) return;
+        if (this.searchController?.signal.aborted) return;
 
-            const localMatches = [];
-            for (const id of chunk) {
-                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                    seen.add(id);
-                    this.searchResults.push(id);
-                    localMatches.push(id);
-                    totalMatches++;
-                }
+        const localMatches = [];
+        for (const id of chunk) {
+            if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                seen.add(id);
+                this.searchResults.push(id);
+                localMatches.push(id);
+                totalMatches++;
             }
+        }
 
-            displayBatch(localMatches);
+        displayBatch(localMatches);
 
-            if (chunkIndex >= 0) {
-                const searchedMillion = (chunkIndex + 1) * 2;
-                const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+        if (chunkIndex >= 0) {
+            const searchedMillion = (chunkIndex + 1) * 2;
+            const matchText = totalMatches === 1 ? "match" : "matches";
+            this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+        }
+
+        chunksCompleted++;
+        if (chunksCompleted === allChunks.length && !this.searchController?.signal.aborted) {
+            if (totalMatches === 0) {
+                this.noResults.style.display = "block";
+                this.loadMoreBtn.style.display = "none";
+            } else {
+                this.updateLoadMoreButton();
             }
-
-            chunksCompleted++;
-            if (chunksCompleted === allChunks.length && !this.searchController?.signal.aborted) {
-                if (totalMatches === 0) {
-                    this.noResults.style.display = "block";
-                    this.loadMoreBtn.style.display = "none";
-                } else {
-                    this.updateLoadMoreButton();
-                }
-                this.showLoading(false);
-            }
-        }).catch(err => {
-            console.error(`Error loading chunk ${chunkIndex}:`, err);
-        });
-    }
+            this.showLoading(false);
+        }
+    }).catch(err => {
+        console.error(`Error loading chunk ${chunkIndex}:`, err);
+    });
 }
 }
 
