@@ -21,7 +21,11 @@ class YouTubeIDFinder {
 
         this.init();
     }
-
+detectDeviceClass() {
+    const ua = navigator.userAgent;
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+    return isMobile ? "mobile" : "desktop";
+}
     init() {
         this.setupEventListeners();
         this.loadInitialData();
