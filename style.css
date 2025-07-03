@@ -245,3 +245,17 @@ mark {
         font-size: 12px;
     }
 }
+
+.clear-search-btn {
+    margin-left: 10px;
+    padding: 8px 16px;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.clear-search-btn:hover {
+    background: #c82333;
+}
