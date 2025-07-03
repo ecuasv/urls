@@ -259,3 +259,6 @@ mark {
 .clear-search-btn:hover {
     background: #c82333;
 }
+.search-container input {
+    padding-right: 70px;
+}
