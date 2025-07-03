@@ -72,7 +72,7 @@ setupEventListeners() {
             this.allowedChunks = this.getAllowedChunks();
         });
     }
-
+}
     async loadChunk(chunkIndex) {
         if (this.chunkCache.has(chunkIndex)) {
             return this.chunkCache.get(chunkIndex);
