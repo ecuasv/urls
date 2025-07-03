@@ -30,11 +30,13 @@ class YouTubeIDFinder {
 
     init() {
         this.deviceClass = this.detectDeviceClass();
+        this.limitedMode = false; // Track if we're in limited mode
         
         if (this.deviceClass === "mobile") {
             // On mobile, only search found.txt
             this.allowedChunks = [-1];
             this.itemsPerLoad = 50;
+            this.limitedMode = true;
         } else {
             // On desktop, search all chunks by default
             this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
@@ -43,9 +45,9 @@ class YouTubeIDFinder {
 
         this.setupEventListeners();
         this.loadInitialData();
-        this.preloadAllChunks();
         this.setupLimitSearchButton();
         this.setupClearSearchButton();
+        this.preloadChunks(); // Only preload what we need
     }
 
     setupLimitSearchButton() {
@@ -53,8 +55,13 @@ class YouTubeIDFinder {
 
         if (this.deviceClass === "desktop") {
             this.limitSearchBtn.style.display = "block";
+            this.limitSearchBtn.style.padding = "12px 24px";
+            this.limitSearchBtn.style.fontSize = "16px";
+            this.limitSearchBtn.style.marginBottom = "20px";
             this.limitSearchBtn.addEventListener("click", () => {
                 this.allowedChunks = [-1]; // Only search found.txt
+                this.limitedMode = true;
+                this.clearChunkCache(); // Clear memory of other chunks
                 this.clearSearch();
                 this.updateStats("Limited search mode activated: searching only known words");
                 this.limitSearchBtn.style.display = "none"; // Hide button after use
@@ -66,12 +73,23 @@ class YouTubeIDFinder {
         // Create clear search button
         const clearSearchBtn = document.createElement("button");
         clearSearchBtn.id = "clearSearchBtn";
-        clearSearchBtn.textContent = "Clear Search";
+        clearSearchBtn.textContent = "Clear";
         clearSearchBtn.style.display = "none";
-        clearSearchBtn.className = "clear-search-btn";
+        clearSearchBtn.style.position = "absolute";
+        clearSearchBtn.style.right = "10px";
+        clearSearchBtn.style.top = "50%";
+        clearSearchBtn.style.transform = "translateY(-50%)";
+        clearSearchBtn.style.padding = "8px 12px";
+        clearSearchBtn.style.background = "#dc3545";
+        clearSearchBtn.style.color = "white";
+        clearSearchBtn.style.border = "none";
+        clearSearchBtn.style.borderRadius = "4px";
+        clearSearchBtn.style.cursor = "pointer";
+        clearSearchBtn.style.fontSize = "14px";
         
-        // Insert it after the search input
+        // Make search container relative positioned
         const searchContainer = document.querySelector(".search-container");
+        searchContainer.style.position = "relative";
         searchContainer.appendChild(clearSearchBtn);
 
         clearSearchBtn.addEventListener("click", () => {
@@ -80,9 +98,17 @@ class YouTubeIDFinder {
             clearSearchBtn.style.display = "none";
         });
 
+        clearSearchBtn.addEventListener("mouseover", () => {
+            clearSearchBtn.style.background = "#c82333";
+        });
+
+        clearSearchBtn.addEventListener("mouseout", () => {
+            clearSearchBtn.style.background = "#dc3545";
+        });
+
         // Show/hide clear button based on search input
         this.searchInput.addEventListener("input", () => {
-            clearSearchBtn.style.display = this.searchInput.value.trim() ? "inline-block" : "none";
+            clearSearchBtn.style.display = this.searchInput.value.trim() ? "block" : "none";
         });
     }
 
@@ -130,21 +156,36 @@ class YouTubeIDFinder {
         }
     }
 
-    async preloadAllChunks() {
-        const preloadPromises = [];
-        preloadPromises.push(
-            fetch("found.txt")
-                .then(res => res.ok ? res.text() : "")
-                .then(text => text.split("\n").filter(id => id.trim()))
-                .then(ids => this.chunkCache.set(-1, ids))
-                .catch(err => console.error("Error preloading found.txt:", err))
-        );
-
-        for (let i = 0; i < this.totalChunks; i++) {
-            preloadPromises.push(this.loadChunk(i));
+    async preloadChunks() {
+        // Always preload found.txt
+        try {
+            const response = await fetch("found.txt");
+            if (response.ok) {
+                const text = await response.text();
+                const ids = text.split("\n").filter(id => id.trim());
+                this.chunkCache.set(-1, ids);
+            }
+        } catch (err) {
+            console.error("Error preloading found.txt:", err);
         }
 
-        await Promise.allSettled(preloadPromises);
+        // Only preload other chunks if not in limited mode
+        if (!this.limitedMode) {
+            const preloadPromises = [];
+            for (let i = 0; i < this.totalChunks; i++) {
+                preloadPromises.push(this.loadChunk(i));
+            }
+            await Promise.allSettled(preloadPromises);
+        }
+    }
+
+    clearChunkCache() {
+        // Keep only found.txt in cache, clear everything else
+        const foundData = this.chunkCache.get(-1);
+        this.chunkCache.clear();
+        if (foundData) {
+            this.chunkCache.set(-1, foundData);
+        }
     }
 
     async loadInitialData() {
