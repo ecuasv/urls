@@ -9,6 +9,7 @@ class YouTubeIDFinder {
 
         this.totalChunks = 39;
         this.chunkCache = new Map();
+        this.foundCache = null; // Cache for found.txt
         this.currentDisplayChunk = 0;
         this.currentDisplayIndex = 0;
         this.itemsPerLoad = 200;
@@ -26,6 +27,7 @@ class YouTubeIDFinder {
         this.setupEventListeners();
         this.loadInitialData();
         this.preloadAllChunks();
+        this.preloadFoundFile();
     }
 
     setupEventListeners() {
@@ -53,6 +55,19 @@ class YouTubeIDFinder {
         });
     }
 
+    async preloadFoundFile() {
+        try {
+            const response = await fetch("found.txt");
+            if (response.ok) {
+                const text = await response.text();
+                this.foundCache = text.split("\n").filter(id => id.trim());
+            }
+        } catch (error) {
+            console.error("Error preloading found.txt:", error);
+            this.foundCache = [];
+        }
+    }
+
     async loadChunk(chunkIndex) {
         if (this.chunkCache.has(chunkIndex)) {
             return this.chunkCache.get(chunkIndex);
@@ -71,33 +86,34 @@ class YouTubeIDFinder {
             return [];
         }
     }
-async preloadAllChunks() {
-    const preloadPromises = [];
-    for (let i = 0; i < this.totalChunks; i++) {
-        preloadPromises.push(this.loadChunk(i));
-    }
-    await Promise.allSettled(preloadPromises);
-}
 
-async loadInitialData() {
-    this.showLoading(true);
-    try {
-        const initialDataEl = document.getElementById("initial-ids");
-        let initialIds = [];
-        if (initialDataEl) {
-            initialIds = JSON.parse(initialDataEl.textContent);
+    async preloadAllChunks() {
+        const preloadPromises = [];
+        for (let i = 0; i < this.totalChunks; i++) {
+            preloadPromises.push(this.loadChunk(i));
         }
-        const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
-        this.displayItems(initialIds.slice(0, itemsToShow));
-        this.currentDisplayIndex = itemsToShow;
-        this.updateLoadMoreButton();
-        this.initialLoaded = true;
-    } catch (error) {
-        console.error("Error loading initial data:", error);
-        this.updateStats("Error loading data");
+        await Promise.allSettled(preloadPromises);
     }
-    this.showLoading(false);
-}
+
+    async loadInitialData() {
+        this.showLoading(true);
+        try {
+            const initialDataEl = document.getElementById("initial-ids");
+            let initialIds = [];
+            if (initialDataEl) {
+                initialIds = JSON.parse(initialDataEl.textContent);
+            }
+            const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
+            this.displayItems(initialIds.slice(0, itemsToShow));
+            this.currentDisplayIndex = itemsToShow;
+            this.updateLoadMoreButton();
+            this.initialLoaded = true;
+        } catch (error) {
+            console.error("Error loading initial data:", error);
+            this.updateStats("Error loading data");
+        }
+        this.showLoading(false);
+    }
 
     async loadMoreData() {
         if (this.isLoading) return;
@@ -160,64 +176,94 @@ async loadInitialData() {
         await this.performSearch();
     }
 
-async performSearch() {
-    this.showLoading(true);
-    this.updateStats("Searching...");
+    async performSearch() {
+        this.showLoading(true);
+        this.updateStats("Searching...");
 
-    const seen = new Set();
-    let totalMatches = 0;
-    let chunksCompleted = 0;
+        const seen = new Set();
+        let totalMatches = 0;
 
-    const allChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
+        try {
+            // First, search found.txt (priority results)
+            if (this.foundCache) {
+                for (const id of this.foundCache) {
+                    const trimmedId = id.trim();
+                    if (trimmedId && trimmedId.toLowerCase().includes(this.searchTerm) && !seen.has(trimmedId)) {
+                        seen.add(trimmedId);
+                        this.searchResults.push(trimmedId);
+                        totalMatches++;
+                    }
+                }
 
-    const displayBatch = (matches) => {
-        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
-        if (newItems.length > 0) {
-            this.displayItems(newItems);
-            this.searchResultIndex += newItems.length;
-        }
-    };
+                // Display priority results immediately
+                if (this.searchResults.length > 0) {
+                    const initialDisplay = this.searchResults.slice(0, this.itemsPerLoad);
+                    this.displayItems(initialDisplay);
+                    this.searchResultIndex = initialDisplay.length;
+                    this.updateStats(`Found ${totalMatches} priority matches, searching remaining...`);
+                }
+            }
 
-    for (const chunkIndex of allChunks) {
-        (chunkIndex === -1
-            ? fetch("found.txt").then(res => res.ok ? res.text() : "").then(text => text.split("\n"))
-            : this.loadChunk(chunkIndex)
-        ).then(chunk => {
             if (this.searchController?.signal.aborted) return;
 
-            const localMatches = [];
-            for (const id of chunk) {
-                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                    seen.add(id);
-                    this.searchResults.push(id);
-                    localMatches.push(id);
-                    totalMatches++;
+            // Then search all chunks
+            let chunksSearched = 0;
+            const searchPromises = Array.from({ length: this.totalChunks }, async (_, i) => {
+                if (this.searchController?.signal.aborted) return;
+                
+                const chunk = await this.loadChunk(i);
+                
+                for (const id of chunk) {
+                    const trimmedId = id.trim();
+                    if (trimmedId && trimmedId.toLowerCase().includes(this.searchTerm) && !seen.has(trimmedId)) {
+                        seen.add(trimmedId);
+                        this.searchResults.push(trimmedId);
+                        totalMatches++;
+                    }
                 }
-            }
 
-            displayBatch(localMatches);
-
-            if (chunkIndex >= 0) {
-                const searchedMillion = (chunkIndex + 1) * 2;
+                chunksSearched++;
+                const searchedMillion = chunksSearched * 2;
                 const matchText = totalMatches === 1 ? "match" : "matches";
                 this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+            });
+
+            await Promise.allSettled(searchPromises);
+
+            if (this.searchController?.signal.aborted) return;
+
+            // Final results handling
+            if (this.searchResults.length === 0) {
+                this.noResults.style.display = "block";
+                this.loadMoreBtn.style.display = "none";
+                this.updateStats("No matches found");
+            } else {
+                // Display any remaining results up to itemsPerLoad
+                if (this.searchResultIndex < this.searchResults.length) {
+                    const remainingSlots = this.itemsPerLoad - this.searchResultIndex;
+                    if (remainingSlots > 0) {
+                        const additionalItems = this.searchResults.slice(
+                            this.searchResultIndex, 
+                            this.searchResultIndex + remainingSlots
+                        );
+                        if (additionalItems.length > 0) {
+                            this.displayItems(additionalItems);
+                            this.searchResultIndex += additionalItems.length;
+                        }
+                    }
+                }
+                
+                this.updateStats(`Found ${this.searchResults.length} total matches`);
+                this.updateLoadMoreButton();
             }
 
-            chunksCompleted++;
-            if (chunksCompleted === allChunks.length && !this.searchController?.signal.aborted) {
-                if (totalMatches === 0) {
-                    this.noResults.style.display = "block";
-                    this.loadMoreBtn.style.display = "none";
-                } else {
-                    this.updateLoadMoreButton();
-                }
-                this.showLoading(false);
-            }
-        }).catch(err => {
-            console.error(`Error loading chunk ${chunkIndex}:`, err);
-        });
+        } catch (error) {
+            console.error("Search error:", error);
+            this.updateStats("Search error occurred");
+        } finally {
+            this.showLoading(false);
+        }
     }
-}
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
@@ -244,6 +290,10 @@ async performSearch() {
     }
 
     clearSearch() {
+        if (this.searchController) {
+            this.searchController.abort();
+        }
+        
         this.searchTerm = "";
         this.searchResults = [];
         this.searchResultIndex = 0;
@@ -274,16 +324,16 @@ async performSearch() {
     updateStats(message) {
         this.stats.textContent = message;
     }
+
     highlightMatch(id) {
-    if (!this.searchTerm) return id;
-    const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`(${escaped})`, 'ig');
-    return id.replace(regex, '<mark>$1</mark>');
-}
+        if (!this.searchTerm) return id;
+        const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escaped})`, 'ig');
+        return id.replace(regex, '<mark>$1</mark>');
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     new YouTubeIDFinder();
 });
-
 
