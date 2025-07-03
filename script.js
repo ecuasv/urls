@@ -98,11 +98,11 @@ class YouTubeIDFinder {
         });
 
         clearSearchBtn.addEventListener("mouseover", () => {
-            clearSearchBtn.style.background = "#c82333";
+            clearSearchBtn.style.background = "#dc3545";
         });
 
         clearSearchBtn.addEventListener("mouseout", () => {
-            clearSearchBtn.style.background = "#dc3545";
+            clearSearchBtn.style.background = "#dc7985";
         });
 
         // Show/hide clear button based on search input
