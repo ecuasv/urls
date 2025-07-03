@@ -19,6 +19,13 @@ class YouTubeIDFinder {
         this.searchTimeout = null;
         this.searchController = null;
 
+        // Sidebar properties
+        this.sidebar = document.getElementById("sidebar");
+        this.sidebarToggle = document.getElementById("sidebarToggle");
+        this.filterButtons = document.getElementById("filterButtons");
+        this.clearFilterBtn = document.getElementById("clearFilter");
+        this.activeFilter = null;
+        this.filterFiles = ['playlist1.txt', 'playlist2.txt', 'playlist3.txt', '10num.txt', 'upper.txt', 'lower.txt', '9w.txt', '8s.txt', '7s.txt', '6s.txt', '6+5s.txt', '6+4s.txt', '6+3s.txt', '6+3+2s.txt', '5+5s.txt', '5+4s.txt', '5+3+3s.txt', '5+2+2+2s.txt', '4+4+3s.txt'];
         this.init();
     }
 
@@ -98,11 +105,11 @@ class YouTubeIDFinder {
         });
 
         clearSearchBtn.addEventListener("mouseover", () => {
-            clearSearchBtn.style.background = "#dc3545";
+            clearSearchBtn.style.background = "#c82333";
         });
 
         clearSearchBtn.addEventListener("mouseout", () => {
-            clearSearchBtn.style.background = "#dc7985";
+            clearSearchBtn.style.background = "#dc3545";
         });
 
         // Show/hide clear button based on search input
@@ -134,6 +141,18 @@ class YouTubeIDFinder {
                 }
             }
         });
+
+        // Sidebar functionality
+        this.sidebarToggle.addEventListener("click", () => {
+            this.toggleSidebar();
+        });
+
+        this.clearFilterBtn.addEventListener("click", () => {
+            this.clearFilter();
+        });
+
+        // Create filter buttons
+        this.createFilterButtons();
     }
 
     async loadChunk(chunkIndex) {
@@ -240,6 +259,13 @@ class YouTubeIDFinder {
 
     async handleSearch() {
         const query = this.searchInput.value.trim();
+
+        // Clear any active filter when searching
+        if (this.activeFilter) {
+            this.clearFilter();
+            // Small delay to let clear filter complete
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
 
         if (this.searchController) {
             this.searchController.abort();
@@ -389,9 +415,96 @@ class YouTubeIDFinder {
 
     highlightMatch(id) {
         if (!this.searchTerm) return id;
+        const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\    highlightMatch(id) {
+        if (!this.searchTerm) return id;
         const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const regex = new RegExp(`(${escaped})`, 'ig');
         return id.replace(regex, '<mark>$1</mark>');
+    }');
+        const regex = new RegExp(`(${escaped})`, 'ig');
+        return id.replace(regex, '<mark>$1</mark>');
+    }
+
+    // Sidebar methods
+    toggleSidebar() {
+        this.sidebar.classList.toggle("open");
+    }
+
+    createFilterButtons() {
+        this.filterFiles.forEach(filename => {
+            const button = document.createElement("button");
+            button.className = "filter-button";
+            button.textContent = filename.replace('.txt', '');
+            button.addEventListener("click", () => {
+                this.loadFilter(filename, button);
+            });
+            this.filterButtons.appendChild(button);
+        });
+    }
+
+    async loadFilter(filename, buttonElement) {
+        if (this.isLoading) return;
+        
+        // Update active filter button
+        document.querySelectorAll('.filter-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        buttonElement.classList.add('active');
+        
+        this.activeFilter = filename;
+        this.showLoading(true);
+        this.updateStats(`Loading filter: ${filename.replace('.txt', '')}...`);
+        
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const text = await response.text();
+            const lines = text.split("\n").filter(line => line.trim());
+            
+            // Extract video IDs from full URLs
+            const ids = lines.map(line => {
+                const match = line.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+                return match ? match[1] : null;
+            }).filter(id => id !== null);
+            
+            // Clear grid and display filtered IDs
+            this.grid.innerHTML = "";
+            this.displayItems(ids);
+            
+            this.updateStats(`Showing ${ids.length} IDs from ${filename.replace('.txt', '')}`);
+            this.loadMoreBtn.style.display = "none"; // No load more for filters
+            this.noResults.style.display = ids.length === 0 ? "block" : "none";
+            
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                this.sidebar.classList.remove("open");
+            }
+            
+        } catch (error) {
+            console.error(`Error loading filter ${filename}:`, error);
+            this.updateStats(`Error loading filter: ${filename.replace('.txt', '')}`);
+        }
+        
+        this.showLoading(false);
+    }
+
+    clearFilter() {
+        this.activeFilter = null;
+        document.querySelectorAll('.filter-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Return to normal browsing mode
+        this.grid.innerHTML = "";
+        this.currentDisplayChunk = 0;
+        this.currentDisplayIndex = 0;
+        this.loadInitialData();
+        
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            this.sidebar.classList.remove("open");
+        }
     }
 }
 
