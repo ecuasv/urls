@@ -55,9 +55,9 @@ class YouTubeIDFinder {
 
         if (this.deviceClass === "desktop") {
             this.limitSearchBtn.style.display = "block";
-            this.limitSearchBtn.style.padding = "12px 24px";
-            this.limitSearchBtn.style.fontSize = "16px";
-            this.limitSearchBtn.style.marginBottom = "20px";
+            this.limitSearchBtn.style.padding = "10px 16px";
+            this.limitSearchBtn.style.fontSize = "14px";
+            this.limitSearchBtn.style.marginBottom = "15px";
             this.limitSearchBtn.addEventListener("click", () => {
                 this.allowedChunks = [-1]; // Only search found.txt
                 this.limitedMode = true;
@@ -75,10 +75,7 @@ class YouTubeIDFinder {
         clearSearchBtn.id = "clearSearchBtn";
         clearSearchBtn.textContent = "Clear";
         clearSearchBtn.style.display = "none";
-        clearSearchBtn.style.position = "absolute";
-        clearSearchBtn.style.right = "10px";
-        clearSearchBtn.style.top = "50%";
-        clearSearchBtn.style.transform = "translateY(-50%)";
+        clearSearchBtn.style.marginLeft = "10px";
         clearSearchBtn.style.padding = "8px 12px";
         clearSearchBtn.style.background = "#dc3545";
         clearSearchBtn.style.color = "white";
@@ -86,10 +83,12 @@ class YouTubeIDFinder {
         clearSearchBtn.style.borderRadius = "4px";
         clearSearchBtn.style.cursor = "pointer";
         clearSearchBtn.style.fontSize = "14px";
+        clearSearchBtn.style.verticalAlign = "top";
         
-        // Make search container relative positioned
+        // Add the button after the search container
         const searchContainer = document.querySelector(".search-container");
-        searchContainer.style.position = "relative";
+        searchContainer.style.display = "flex";
+        searchContainer.style.alignItems = "center";
         searchContainer.appendChild(clearSearchBtn);
 
         clearSearchBtn.addEventListener("click", () => {
