@@ -22,34 +22,54 @@ class YouTubeIDFinder {
         this.init();
     }
 
-    init() {
-        this.setupEventListeners();
-        this.loadInitialData();
-        this.preloadAllChunks();
+init() {
+    this.deviceClass = this.detectDeviceClass();
+    this.advancedMode = false; // default to batching on desktop
+    this.allowedChunks = this.getAllowedChunks();
+    this.setupEventListeners();
+    this.loadInitialData();
+    this.preloadAllowedChunks();
+}
+
+detectDeviceClass() {
+    const ua = navigator.userAgent;
+    const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+    return isMobile ? "mobile" : "desktop";
+}
+
+getAllowedChunks() {
+    if (this.deviceClass === "mobile") {
+        return [-1];  // Only found.txt
+    } else if (this.advancedMode) {
+        return [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)]; // Fast mode: all at once
+    } else {
+        return [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)]; // Safe mode: but will batch in performSearch
     }
+}
 
-    setupEventListeners() {
-        this.searchInput.addEventListener("input", () => {
-            clearTimeout(this.searchTimeout);
-            this.searchTimeout = setTimeout(() => {
-                this.handleSearch();
-            }, 300);
-        });
-
-        this.loadMoreBtn.addEventListener("click", () => {
-            if (this.searchTerm) {
-                this.loadMoreSearchResults();
-            } else {
-                this.loadMoreData();
+setupEventListeners() {
+    this.searchInput.addEventListener("input", () => {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => this.handleSearch(), 300);
+    });
+    this.loadMoreBtn.addEventListener("click", () => {
+        if (this.searchTerm) this.loadMoreSearchResults();
+        else this.loadMoreData();
+    });
+    window.addEventListener("scroll", () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+            if (!this.isLoading && this.loadMoreBtn.style.display !== "none") {
+                this.loadMoreBtn.click();
             }
-        });
+        }
+    });
 
-        window.addEventListener("scroll", () => {
-            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-                if (!this.isLoading && this.loadMoreBtn.style.display !== "none") {
-                    this.loadMoreBtn.click();
-                }
-            }
+    // Add fast mode toggle for desktop
+    if (this.deviceClass === "desktop") {
+        document.getElementById("advancedOption").style.display = "block";
+        document.getElementById("fastModeToggle").addEventListener("change", (e) => {
+            this.advancedMode = e.target.checked;
+            this.allowedChunks = this.getAllowedChunks();
         });
     }
 
@@ -71,20 +91,11 @@ class YouTubeIDFinder {
             return [];
         }
     }
-async preloadAllChunks() {
+async preloadAllowedChunks() {
     const preloadPromises = [];
-    preloadPromises.push(
-        fetch("found.txt")
-            .then(res => res.ok ? res.text() : "")
-            .then(text => text.split("\n"))
-            .then(ids => this.chunkCache.set(-1, ids))
-            .catch(err => console.error("Error preloading found.txt:", err))
-    );
-
-    for (let i = 0; i < this.totalChunks; i++) {
-        preloadPromises.push(this.loadChunk(i));
-    }
-
+    this.allowedChunks.slice(0, 4).forEach(chunkIndex => {
+        preloadPromises.push(this.loadChunk(chunkIndex));
+    });
     await Promise.allSettled(preloadPromises);
 }
 
@@ -172,61 +183,67 @@ async loadInitialData() {
 async performSearch() {
     this.showLoading(true);
     this.updateStats("Searching...");
-
     const seen = new Set();
+    const matches = [];
     let totalMatches = 0;
-    let chunksCompleted = 0;
 
-    const allChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
+    if (this.advancedMode) {
+        // Fast mode: load all allowed chunks in parallel immediately
+        await Promise.all(this.allowedChunks.map(chunkIndex => 
+            this.loadChunk(chunkIndex).then(chunk => {
+                for (const id of chunk) {
+                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                        seen.add(id);
+                        this.searchResults.push(id);
+                        matches.push(id);
+                        totalMatches++;
+                    }
+                }
+            }).catch(err => console.error(`Error loading chunk ${chunkIndex}:`, err))
+        ));
+        this.displayItems(this.searchResults.slice(0, this.itemsPerLoad));
+        this.searchResultIndex = this.itemsPerLoad;
+        this.updateStats(`Searched all data, found ${totalMatches} matches`);
+        this.updateLoadMoreButton();
+        this.showLoading(false);
+        if (totalMatches === 0) this.noResults.style.display = "block";
+        return;
+    }
 
-    const displayBatch = (matches) => {
-        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
-        if (newItems.length > 0) {
-            this.displayItems(newItems);
-            this.searchResultIndex += newItems.length;
-        }
-    };
-
-for (const chunkIndex of allChunks) {
-    const promise = chunkIndex === -1
-        ? Promise.resolve(this.chunkCache.get(-1) || [])
-        : this.loadChunk(chunkIndex);
-
-    promise.then(chunk => {
-        if (this.searchController?.signal.aborted) return;
-
-        const localMatches = [];
-        for (const id of chunk) {
-            if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                seen.add(id);
-                this.searchResults.push(id);
-                localMatches.push(id);
-                totalMatches++;
+    // Safe batched mode: throttle concurrent loads
+    const MAX_PARALLEL = 3;
+    let active = 0, i = 0;
+    const processNext = () => {
+        if (i >= this.allowedChunks.length || this.searchController?.signal.aborted) return;
+        const chunkIndex = this.allowedChunks[i++];
+        active++;
+        this.loadChunk(chunkIndex).then(chunk => {
+            if (this.searchController?.signal.aborted) return;
+            const localMatches = [];
+            for (const id of chunk) {
+                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                    seen.add(id);
+                    this.searchResults.push(id);
+                    localMatches.push(id);
+                    totalMatches++;
+                }
             }
-        }
-
-        displayBatch(localMatches);
-
-        if (chunkIndex >= 0) {
-            const searchedMillion = (chunkIndex + 1) * 2;
+            this.displayItems(localMatches);
+            const searchedMillion = chunkIndex >= 0 ? (chunkIndex + 1) * 2 : 0;
             const matchText = totalMatches === 1 ? "match" : "matches";
-            this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
-        }
-
-        chunksCompleted++;
-        if (chunksCompleted === allChunks.length && !this.searchController?.signal.aborted) {
-            if (totalMatches === 0) {
-                this.noResults.style.display = "block";
-                this.loadMoreBtn.style.display = "none";
+            this.updateStats(`Searched ${searchedMillion} million IDs, found ${totalMatches} ${matchText}`);
+        }).catch(err => console.error(`Error loading chunk ${chunkIndex}:`, err)).finally(() => {
+            active--;
+            if (i >= this.allowedChunks.length && active === 0) {
+                this.showLoading(false);
+                if (totalMatches === 0) this.noResults.style.display = "block";
+                else this.updateLoadMoreButton();
             } else {
-                this.updateLoadMoreButton();
+                processNext();
             }
-            this.showLoading(false);
-        }
-    }).catch(err => {
-        console.error(`Error loading chunk ${chunkIndex}:`, err);
-    });
-}
+        });
+    };
+    for (let j = 0; j < MAX_PARALLEL; j++) processNext();
 }
 
     loadMoreSearchResults() {
