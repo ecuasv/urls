@@ -143,18 +143,28 @@ class YouTubeIDFinder {
         });
 
         // Sidebar functionality
-        this.sidebarToggle.addEventListener("click", () => {
-            this.toggleSidebar();
-        });
-
-        this.clearFilterBtn.addEventListener("click", () => {
-            this.clearFilter();
-        });
-
-        // Create filter buttons
-        this.createFilterButtons();
+    this.sidebarToggle.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent event bubbling
+        this.toggleSidebar();
+    });
+    this.clearFilterBtn.addEventListener("click", () => {
+        this.clearFilter();
+    });
+    document.addEventListener("click", (e) => {
+        this.handleClickOutside(e);
+    });
+    this.sidebar.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
+    this.createFilterButtons();
     }
-
+handleClickOutside(event) {
+    if (!this.sidebar.classList.contains("open")) return;
+    if (!this.sidebar.contains(event.target) && 
+        !this.sidebarToggle.contains(event.target)) {
+        this.closeSidebar();
+    }
+}
     async loadChunk(chunkIndex) {
         if (this.chunkCache.has(chunkIndex)) {
             return this.chunkCache.get(chunkIndex);
@@ -422,8 +432,22 @@ class YouTubeIDFinder {
 
     // Sidebar methods
     toggleSidebar() {
-        this.sidebar.classList.toggle("open");
+    if (this.sidebar.classList.contains("open")) {
+        this.closeSidebar();
+    } else {
+        this.openSidebar();
     }
+}
+    openSidebar() {
+    this.sidebar.classList.add("open");
+    // Optional: Add overlay
+    this.createOverlay();
+}
+    closeSidebar() {
+    this.sidebar.classList.remove("open");
+    // Optional: Remove overlay
+    this.removeOverlay();
+}
 
 createFilterButtons() {
     const filterDisplayNames = {
@@ -497,9 +521,9 @@ createFilterButtons() {
             this.noResults.style.display = ids.length === 0 ? "block" : "none";
             
             // Close sidebar on mobile
-            if (window.innerWidth <= 768) {
-                this.sidebar.classList.remove("open");
-            }
+                if (window.innerWidth <= 768) {
+        this.closeSidebar();
+    }
             
         } catch (error) {
             console.error(`Error loading filter ${filename}:`, error);
@@ -509,23 +533,23 @@ createFilterButtons() {
         this.showLoading(false);
     }
 
-    clearFilter() {
-        this.activeFilter = null;
-        document.querySelectorAll('.filter-button').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Return to normal browsing mode
-        this.grid.innerHTML = "";
-        this.currentDisplayChunk = 0;
-        this.currentDisplayIndex = 0;
-        this.loadInitialData();
-        
-        // Close sidebar on mobile
-        if (window.innerWidth <= 768) {
-            this.sidebar.classList.remove("open");
-        }
+clearFilter() {
+    this.activeFilter = null;
+    document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Return to normal browsing mode
+    this.grid.innerHTML = "";
+    this.currentDisplayChunk = 0;
+    this.currentDisplayIndex = 0;
+    this.loadInitialData();
+    
+    // Close sidebar on mobile using the new method
+    if (window.innerWidth <= 768) {
+        this.closeSidebar();
     }
+}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
