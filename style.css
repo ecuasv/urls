@@ -135,12 +135,14 @@ body {
     padding: 40px;
     font-size: 16px;
 }
+
 mark {
     background-color: #DFCF6B;
     color: inherit;
     padding: 0 2px;
     border-radius: 3px;
 }
+
 /* Sidebar Styles */
 .sidebar {
     position: fixed;
@@ -196,6 +198,12 @@ mark {
     padding: 20px;
 }
 
+#filterButtons {
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
 .filter-button {
     display: block;
     width: 100%;
@@ -231,6 +239,25 @@ mark {
     background: rgba(220, 53, 69, 0.2);
 }
 
+/* Style the scrollbar for filter buttons */
+#filterButtons::-webkit-scrollbar {
+    width: 6px;
+}
+
+#filterButtons::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+#filterButtons::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+#filterButtons::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .sidebar {
@@ -243,6 +270,10 @@ mark {
         right: 10px;
         padding: 8px 12px;
         font-size: 12px;
+    }
+    
+    #filterButtons {
+        max-height: calc(100vh - 120px);
     }
 }
 
@@ -259,6 +290,7 @@ mark {
 .clear-search-btn:hover {
     background: #c82333;
 }
+
 .search-container input {
     padding-right: 70px;
 }
