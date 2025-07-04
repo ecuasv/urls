@@ -530,7 +530,7 @@ async loadFilter(filename, buttonElement) {
         const playlistId = this.playlistIds[filename];
         this.displayItems(ids, playlistId);
         
-        this.updateStats(`Showing ${ids.length} IDs from ${filename.replace('.txt', '')}`);
+        this.updateStats(`Showing ${ids.length} IDs`);
         this.loadMoreBtn.style.display = "none"; // No load more for filters
         this.noResults.style.display = ids.length === 0 ? "block" : "none";
         
