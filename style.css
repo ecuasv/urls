@@ -184,15 +184,8 @@ mark {
 
 .sidebar-header {
     padding: 20px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-    background: rgba(102, 126, 234, 0.1);
-}
-
-.sidebar-header {
-    padding: 20px;
-    border-bottom: none; /* Remove border */
-    background: transparent; /* Make transparent */
-    height: 60px; /* Maintain space for visual truncation effect */
+    background: transparent;
+    opacity: 0;
 }
 
 .sidebar-content {
