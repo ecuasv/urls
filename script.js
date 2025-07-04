@@ -18,7 +18,11 @@ class YouTubeIDFinder {
         this.searchResultIndex = 0;
         this.searchTimeout = null;
         this.searchController = null;
-
+    this.playlistIds = {
+        'playlist1.txt': 'PL_KtqxTCaHT6yYy5POQ8EqmtTQqctG9dh',
+        'playlist2.txt': 'PL_KtqxTCaHT5by5xMzIlrSVksZiSB_69Z',
+        'playlist3.txt': 'PL_KtqxTCaHT48V5Q3S_LTVPPC2Mz_7ikN'
+    };
         // Sidebar properties
         this.sidebar = document.getElementById("sidebar");
         this.sidebarToggle = document.getElementById("sidebarToggle");
@@ -376,20 +380,27 @@ handleClickOutside(event) {
         this.updateLoadMoreButton();
     }
 
-    displayItems(items) {
-        const fragment = document.createDocumentFragment();
-        for (const id of items) {
-            const link = document.createElement("a");
+displayItems(items, playlistId = null) {
+    const fragment = document.createDocumentFragment();
+    for (const id of items) {
+        const link = document.createElement("a");
+        
+        // Build URL based on whether it's a playlist or regular video
+        if (playlistId) {
+            link.href = `https://www.youtube.com/watch?v=${id}&list=${playlistId}`;
+        } else {
             link.href = `https://www.youtube.com/watch?v=${id}`;
-            link.target = "_blank";
-            link.innerHTML = this.highlightMatch(id);
-            link.rel = "noopener noreferrer";
-            fragment.appendChild(link);
         }
-        requestAnimationFrame(() => {
-            this.grid.appendChild(fragment);
-        });
+        
+        link.target = "_blank";
+        link.innerHTML = this.highlightMatch(id);
+        link.rel = "noopener noreferrer";
+        fragment.appendChild(link);
     }
+    requestAnimationFrame(() => {
+        this.grid.appendChild(fragment);
+    });
+}
 
     clearSearch() {
         this.searchTerm = "";
@@ -486,52 +497,55 @@ createFilterButtons() {
     });
 }
 
-    async loadFilter(filename, buttonElement) {
-        if (this.isLoading) return;
+async loadFilter(filename, buttonElement) {
+    if (this.isLoading) return;
+    
+    // Update active filter button
+    document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    buttonElement.classList.add('active');
+    
+    this.activeFilter = filename;
+    this.showLoading(true);
+    this.updateStats(`Loading filter: ${filename.replace('.txt', '')}...`);
+    
+    try {
+        const response = await fetch(filename);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
-        // Update active filter button
-        document.querySelectorAll('.filter-button').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        buttonElement.classList.add('active');
+        const text = await response.text();
+        const lines = text.split("\n").filter(line => line.trim());
         
-        this.activeFilter = filename;
-        this.showLoading(true);
-        this.updateStats(`Loading filter: ${filename.replace('.txt', '')}...`);
+        // Extract video IDs from full URLs
+        const ids = lines.map(line => {
+            const match = line.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+            return match ? match[1] : null;
+        }).filter(id => id !== null);
         
-        try {
-            const response = await fetch(filename);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            
-            const text = await response.text();
-            const lines = text.split("\n").filter(line => line.trim());
-            
-            // Extract video IDs from full URLs
-            const ids = lines.map(line => {
-                const match = line.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-                return match ? match[1] : null;
-            }).filter(id => id !== null);
-            
-            // Clear grid and display filtered IDs
-            this.grid.innerHTML = "";
-            this.displayItems(ids);
-            
-            this.updateStats(`Showing ${ids.length} IDs from ${filename.replace('.txt', '')}`);
-            this.loadMoreBtn.style.display = "none"; // No load more for filters
-            this.noResults.style.display = ids.length === 0 ? "block" : "none";
-            
-            // Close sidebar on mobile
-                if (window.innerWidth <= 768) {
-        this.closeSidebar();
-    }
-            
-        } catch (error) {
-            console.error(`Error loading filter ${filename}:`, error);
-            this.updateStats(`Error loading filter: ${filename.replace('.txt', '')}`);
+        // Clear grid and display filtered IDs
+        this.grid.innerHTML = "";
+        
+        // Check if this is a playlist file and get the playlist ID
+        const playlistId = this.playlistIds[filename];
+        this.displayItems(ids, playlistId);
+        
+        this.updateStats(`Showing ${ids.length} IDs from ${filename.replace('.txt', '')}`);
+        this.loadMoreBtn.style.display = "none"; // No load more for filters
+        this.noResults.style.display = ids.length === 0 ? "block" : "none";
+        
+        // Close sidebar on mobile
+        if (window.innerWidth <= 768) {
+            this.sidebar.classList.remove("open");
         }
         
-        this.showLoading(false);
+    } catch (error) {
+        console.error(`Error loading filter ${filename}:`, error);
+        this.updateStats(`Error loading filter: ${filename.replace('.txt', '')}`);
     }
+    
+    this.showLoading(false);
+}
 
 clearFilter() {
     this.activeFilter = null;
