@@ -425,17 +425,42 @@ class YouTubeIDFinder {
         this.sidebar.classList.toggle("open");
     }
 
-    createFilterButtons() {
-        this.filterFiles.forEach(filename => {
-            const button = document.createElement("button");
-            button.className = "filter-button";
-            button.textContent = filename.replace('.txt', '');
-            button.addEventListener("click", () => {
-                this.loadFilter(filename, button);
-            });
-            this.filterButtons.appendChild(button);
+createFilterButtons() {
+    const filterDisplayNames = {
+        'playlist1.txt': 'IDs related to the video itself',
+        'playlist2.txt': 'selected 7+ letter combos', 
+        'playlist3.txt': 'selected 6 letter combos',
+        '10num.txt': '10 Numbers',
+        'upper.txt': 'Uppercase',
+        'lower.txt': 'Lowercase',
+        '9w.txt': '9 letter words',
+        '8s.txt': '8 letter words',
+        '7s.txt': '7 letter words',
+        '6s.txt': '6 letter words',
+        '6+5s.txt': '6+5 letter words',
+        '6+4s.txt': '6+4 letter words',
+        '6+3s.txt': '6+3 letter words',
+        '6+3+2s.txt': '6+3+2 letter words',
+        '5+5s.txt': '5+5 letter words',
+        '5+4s.txt': '5+4 letter words',
+        '5+3+3s.txt': '5+3+3 letter words',
+        '5+2+2+2s.txt': '5+2+2+2 letter words',
+        '4+4+3s.txt': '4+4+3 letter words'
+    };
+
+    this.filterFiles.forEach(filename => {
+        const button = document.createElement("button");
+        button.className = "filter-button";
+        
+        // Use custom display name if available, otherwise use filename without .txt
+        button.textContent = filterDisplayNames[filename] || filename.replace('.txt', '');
+        
+        button.addEventListener("click", () => {
+            this.loadFilter(filename, button);
         });
-    }
+        this.filterButtons.appendChild(button);
+    });
+}
 
     async loadFilter(filename, buttonElement) {
         if (this.isLoading) return;
