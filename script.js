@@ -452,8 +452,8 @@ handleClickOutside(event) {
 createFilterButtons() {
     const filterDisplayNames = {
         'playlist1.txt': 'IDs related to the video itself',
-        'playlist2.txt': 'selected 7+ letter combos', 
-        'playlist3.txt': 'selected 6 letter combos',
+        'playlist2.txt': 'selected 7+ letters', 
+        'playlist3.txt': 'selected 6 letters',
         '10num.txt': '10 Numbers',
         'upper.txt': 'Uppercase',
         'lower.txt': 'Lowercase',
