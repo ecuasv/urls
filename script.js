@@ -526,7 +526,7 @@ async loadFilter(filename, buttonElement) {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const text = await response.text();
-        const lines = text.split("\n").filter(line => line.trim());
+        const ids = text.split("\n").filter(line => line.trim());
         this.grid.innerHTML = "";
         
         // Check if this is a playlist file and get the playlist ID
