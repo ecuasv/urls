@@ -188,28 +188,39 @@ handleClickOutside(event) {
         }
     }
 
-    async preloadChunks() {
-        // Always preload found.txt
+async preloadChunks() {
+    try {
+        const response = await fetch("found.txt");
+        if (response.ok) {
+            const text = await response.text();
+            const ids = text.split("\n").filter(id => id.trim());
+            this.chunkCache.set(-1, ids);
+        }
+    } catch (err) {
+        console.error("Error preloading found.txt:", err);
+    }
+    const filterPreloadPromises = this.filterFiles.map(async (filename) => {
         try {
-            const response = await fetch("found.txt");
+            const response = await fetch(filename);
             if (response.ok) {
                 const text = await response.text();
                 const ids = text.split("\n").filter(id => id.trim());
-                this.chunkCache.set(-1, ids);
+                // Cache the IDs with a filter prefix
+                this.chunkCache.set(`filter_${filename}`, ids);
             }
         } catch (err) {
-            console.error("Error preloading found.txt:", err);
+            console.error(`Error preloading filter ${filename}:`, err);
         }
-
-        // Only preload other chunks if not in limited mode
-        if (!this.limitedMode) {
-            const preloadPromises = [];
-            for (let i = 0; i < this.totalChunks; i++) {
-                preloadPromises.push(this.loadChunk(i));
-            }
-            await Promise.allSettled(preloadPromises);
+    });
+    await Promise.allSettled(filterPreloadPromises);
+    if (!this.limitedMode) {
+        const preloadPromises = [];
+        for (let i = 0; i < this.totalChunks; i++) {
+            preloadPromises.push(this.loadChunk(i));
         }
+        await Promise.allSettled(preloadPromises);
     }
+}
 
     clearChunkCache() {
         // Keep only found.txt in cache, clear everything else
@@ -516,14 +527,6 @@ async loadFilter(filename, buttonElement) {
         
         const text = await response.text();
         const lines = text.split("\n").filter(line => line.trim());
-        
-        // Extract video IDs from full URLs
-        const ids = lines.map(line => {
-            const match = line.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-            return match ? match[1] : null;
-        }).filter(id => id !== null);
-        
-        // Clear grid and display filtered IDs
         this.grid.innerHTML = "";
         
         // Check if this is a playlist file and get the playlist ID
