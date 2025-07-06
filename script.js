@@ -501,7 +501,7 @@ class YouTubeIDFinder {
             'playlist1.txt': 'IDs related to the video itself',
             'playlist2.txt': 'selected 7+ letters', 
             'playlist3.txt': 'selected 6 letters',
-            '10num.txt': '9+ Numbers',
+            '10num.txt': '10 numbers',
             'upper.txt': 'ALL UPPERCASE',
             'lower.txt': 'all lowercase',
             '9w.txt': '9 letter words',
