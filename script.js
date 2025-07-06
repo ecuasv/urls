@@ -572,4 +572,3 @@ clearFilter() {
 document.addEventListener("DOMContentLoaded", () => {
     new YouTubeIDFinder();
 });
-
