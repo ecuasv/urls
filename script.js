@@ -42,8 +42,9 @@ class YouTubeIDFinder {
     init() {
         this.deviceClass = this.detectDeviceClass();
         
+        // Both mobile and desktop now start in limited mode by default
         this.limitedMode = true;
-        this.allowedChunks = [-1]; 
+        this.allowedChunks = [-1]; // Only search found.txt initially
         
         if (this.deviceClass === "mobile") {
             this.itemsPerLoad = 50;
@@ -53,13 +54,13 @@ class YouTubeIDFinder {
 
         this.setupEventListeners();
         this.loadInitialData();
-        this.setupExpandSearchButton();
+        this.setupExpandSearchButton(); // Changed from setupLimitSearchButton
         this.setupClearSearchButton();
         this.preloadChunks();
     }
 
     setupExpandSearchButton() {
-        this.expandSearchBtn = document.getElementById("limitSearchBtn"); 
+        this.expandSearchBtn = document.getElementById("limitSearchBtn"); // Reuse the same button element
         
         if (this.deviceClass === "desktop") {
             this.expandSearchBtn.style.display = "block";
@@ -67,21 +68,23 @@ class YouTubeIDFinder {
             this.expandSearchBtn.style.fontSize = "14px";
             this.expandSearchBtn.style.marginBottom = "15px";
             
+            // Change button text and functionality
             this.expandSearchBtn.textContent = "Search All 78 Million IDs";
             this.expandSearchBtn.title = "Expand search to include all YouTube IDs (uses more bandwidth)";
             
             this.expandSearchBtn.addEventListener("click", () => {
                 this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
                 this.limitedMode = false;
-                this.preloadAllChunks();
+                this.preloadAllChunks(); // Preload all chunks now
                 this.clearSearch();
                 this.updateStats("Full search mode activated: searching all 78 million IDs");
-                this.expandSearchBtn.style.display = "none";
+                this.expandSearchBtn.style.display = "none"; // Hide button after use
             });
         }
     }
 
     async preloadAllChunks() {
+        // Preload all chunks when user expands search
         const preloadPromises = [];
         for (let i = 0; i < this.totalChunks; i++) {
             preloadPromises.push(this.loadChunk(i));
@@ -90,6 +93,7 @@ class YouTubeIDFinder {
     }
 
     setupClearSearchButton() {
+        // Create clear search button
         const clearSearchBtn = document.createElement("button");
         clearSearchBtn.id = "clearSearchBtn";
         clearSearchBtn.textContent = "Clear";
@@ -104,6 +108,7 @@ class YouTubeIDFinder {
         clearSearchBtn.style.fontSize = "14px";
         clearSearchBtn.style.verticalAlign = "top";
         
+        // Add the button after the search container
         const searchContainer = document.querySelector(".search-container");
         searchContainer.style.display = "flex";
         searchContainer.style.alignItems = "center";
@@ -123,6 +128,7 @@ class YouTubeIDFinder {
             clearSearchBtn.style.background = "#dc3545";
         });
 
+        // Show/hide clear button based on search input
         this.searchInput.addEventListener("input", () => {
             clearSearchBtn.style.display = this.searchInput.value.trim() ? "block" : "none";
         });
@@ -197,6 +203,7 @@ class YouTubeIDFinder {
     }
 
     async preloadChunks() {
+        // Always preload found.txt and filter files
         try {
             const response = await fetch("found.txt");
             if (response.ok) {
@@ -221,12 +228,17 @@ class YouTubeIDFinder {
             }
         });
         await Promise.allSettled(filterPreloadPromises);
+        
+        // Don't preload all chunks by default anymore
+        // Only preload when user expands search
     }
 
     clearChunkCache() {
+        // Keep only found.txt and filter data in cache, clear everything else
         const foundData = this.chunkCache.get(-1);
         const filterData = new Map();
         
+        // Preserve filter data
         for (const [key, value] of this.chunkCache.entries()) {
             if (key.toString().startsWith('filter_')) {
                 filterData.set(key, value);
@@ -238,6 +250,7 @@ class YouTubeIDFinder {
             this.chunkCache.set(-1, foundData);
         }
         
+        // Restore filter data
         for (const [key, value] of filterData.entries()) {
             this.chunkCache.set(key, value);
         }
@@ -257,6 +270,7 @@ class YouTubeIDFinder {
             this.updateLoadMoreButton();
             this.initialLoaded = true;
             
+            // Update stats to reflect limited mode
             this.updateStats("Displaying known words only - click 'Search All 78 Million IDs' to expand search scope");
         } catch (error) {
             console.error("Error loading initial data:", error);
@@ -298,6 +312,8 @@ class YouTubeIDFinder {
 
     async handleSearch() {
         const query = this.searchInput.value.trim();
+
+        // Clear any active filter when searching
         if (this.activeFilter) {
             this.clearFilter();
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -347,6 +363,7 @@ async performSearch() {
         }
     };
 
+    // Create array of promises for all chunks
     const chunkPromises = this.allowedChunks.map(chunkIndex => {
         const promise = chunkIndex === -1
             ? Promise.resolve(this.chunkCache.get(-1) || [])
@@ -375,6 +392,7 @@ async performSearch() {
                 this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
             } else if (chunkIndex === -1) {
                 const matchText = totalMatches === 1 ? "match" : "matches";
+                // Fixed: removed undefined modeText variable
                 this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
             }
 
@@ -385,8 +403,12 @@ async performSearch() {
             return null;
         });
     });
+
+    // Wait for all chunks to complete
     try {
         await Promise.allSettled(chunkPromises);
+        
+        // Final update after all chunks are processed
         if (!this.searchController?.signal.aborted) {
             if (totalMatches === 0) {
                 this.noResults.style.display = "block";
@@ -402,6 +424,7 @@ async performSearch() {
         console.error("Search error:", error);
         this.updateStats("Search error occurred");
     } finally {
+        // Ensure loading always stops
         this.showLoading(false);
     }
 }
@@ -486,10 +509,12 @@ async performSearch() {
 
     openSidebar() {
         this.sidebar.classList.add("open");
+        this.createOverlay();
     }
 
     closeSidebar() {
         this.sidebar.classList.remove("open");
+        this.removeOverlay();
     }
 
     createFilterButtons() {
@@ -580,8 +605,12 @@ async performSearch() {
             this.closeSidebar();
         }
     }
-}
 
-document.addEventListener("DOMContentLoaded", () => {
-    new YouTubeIDFinder();
-});
+    createOverlay() {
+        // Implementation for overlay if needed
+    }
+
+    removeOverlay() {
+        // Implementation for overlay removal if needed
+    }
+}
