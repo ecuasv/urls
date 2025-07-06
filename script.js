@@ -271,7 +271,7 @@ class YouTubeIDFinder {
             this.initialLoaded = true;
             
             // Update stats to reflect limited mode
-            this.updateStats("Showing known words only - click 'Search All 78 Million IDs' to expand");
+            this.updateStats("Displaying known words only - click 'Search All 78 Million IDs' to expand search scope");
         } catch (error) {
             console.error("Error loading initial data:", error);
             this.updateStats("Error loading data");
@@ -388,7 +388,6 @@ class YouTubeIDFinder {
                     this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
                 } else if (chunkIndex === -1) {
                     const matchText = totalMatches === 1 ? "match" : "matches";
-                    const modeText = this.limitedMode ? " (limited mode - click 'Search All 78 Million IDs' to expand)" : "";
                     this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}${modeText}`);
                 }
 
