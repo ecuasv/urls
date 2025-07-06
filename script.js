@@ -42,9 +42,8 @@ class YouTubeIDFinder {
     init() {
         this.deviceClass = this.detectDeviceClass();
         
-        // Both mobile and desktop now start in limited mode by default
         this.limitedMode = true;
-        this.allowedChunks = [-1]; // Only search found.txt initially
+        this.allowedChunks = [-1]; 
         
         if (this.deviceClass === "mobile") {
             this.itemsPerLoad = 50;
@@ -54,13 +53,13 @@ class YouTubeIDFinder {
 
         this.setupEventListeners();
         this.loadInitialData();
-        this.setupExpandSearchButton(); // Changed from setupLimitSearchButton
+        this.setupExpandSearchButton();
         this.setupClearSearchButton();
         this.preloadChunks();
     }
 
     setupExpandSearchButton() {
-        this.expandSearchBtn = document.getElementById("limitSearchBtn"); // Reuse the same button element
+        this.expandSearchBtn = document.getElementById("limitSearchBtn"); 
         
         if (this.deviceClass === "desktop") {
             this.expandSearchBtn.style.display = "block";
@@ -68,23 +67,21 @@ class YouTubeIDFinder {
             this.expandSearchBtn.style.fontSize = "14px";
             this.expandSearchBtn.style.marginBottom = "15px";
             
-            // Change button text and functionality
             this.expandSearchBtn.textContent = "Search All 78 Million IDs";
             this.expandSearchBtn.title = "Expand search to include all YouTube IDs (uses more bandwidth)";
             
             this.expandSearchBtn.addEventListener("click", () => {
                 this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
                 this.limitedMode = false;
-                this.preloadAllChunks(); // Preload all chunks now
+                this.preloadAllChunks();
                 this.clearSearch();
                 this.updateStats("Full search mode activated: searching all 78 million IDs");
-                this.expandSearchBtn.style.display = "none"; // Hide button after use
+                this.expandSearchBtn.style.display = "none";
             });
         }
     }
 
     async preloadAllChunks() {
-        // Preload all chunks when user expands search
         const preloadPromises = [];
         for (let i = 0; i < this.totalChunks; i++) {
             preloadPromises.push(this.loadChunk(i));
@@ -93,7 +90,6 @@ class YouTubeIDFinder {
     }
 
     setupClearSearchButton() {
-        // Create clear search button
         const clearSearchBtn = document.createElement("button");
         clearSearchBtn.id = "clearSearchBtn";
         clearSearchBtn.textContent = "Clear";
@@ -108,7 +104,6 @@ class YouTubeIDFinder {
         clearSearchBtn.style.fontSize = "14px";
         clearSearchBtn.style.verticalAlign = "top";
         
-        // Add the button after the search container
         const searchContainer = document.querySelector(".search-container");
         searchContainer.style.display = "flex";
         searchContainer.style.alignItems = "center";
@@ -128,7 +123,6 @@ class YouTubeIDFinder {
             clearSearchBtn.style.background = "#dc3545";
         });
 
-        // Show/hide clear button based on search input
         this.searchInput.addEventListener("input", () => {
             clearSearchBtn.style.display = this.searchInput.value.trim() ? "block" : "none";
         });
@@ -203,7 +197,6 @@ class YouTubeIDFinder {
     }
 
     async preloadChunks() {
-        // Always preload found.txt and filter files
         try {
             const response = await fetch("found.txt");
             if (response.ok) {
@@ -228,17 +221,12 @@ class YouTubeIDFinder {
             }
         });
         await Promise.allSettled(filterPreloadPromises);
-        
-        // Don't preload all chunks by default anymore
-        // Only preload when user expands search
     }
 
     clearChunkCache() {
-        // Keep only found.txt and filter data in cache, clear everything else
         const foundData = this.chunkCache.get(-1);
         const filterData = new Map();
         
-        // Preserve filter data
         for (const [key, value] of this.chunkCache.entries()) {
             if (key.toString().startsWith('filter_')) {
                 filterData.set(key, value);
@@ -250,7 +238,6 @@ class YouTubeIDFinder {
             this.chunkCache.set(-1, foundData);
         }
         
-        // Restore filter data
         for (const [key, value] of filterData.entries()) {
             this.chunkCache.set(key, value);
         }
@@ -270,7 +257,6 @@ class YouTubeIDFinder {
             this.updateLoadMoreButton();
             this.initialLoaded = true;
             
-            // Update stats to reflect limited mode
             this.updateStats("Displaying known words only - click 'Search All 78 Million IDs' to expand search scope");
         } catch (error) {
             console.error("Error loading initial data:", error);
@@ -312,8 +298,6 @@ class YouTubeIDFinder {
 
     async handleSearch() {
         const query = this.searchInput.value.trim();
-
-        // Clear any active filter when searching
         if (this.activeFilter) {
             this.clearFilter();
             await new Promise(resolve => setTimeout(resolve, 100));
@@ -346,66 +330,81 @@ class YouTubeIDFinder {
         await this.performSearch();
     }
 
-    async performSearch() {
-        this.showLoading(true);
-        this.updateStats("Searching...");
+async performSearch() {
+    this.showLoading(true);
+    this.updateStats("Searching...");
 
-        const seen = new Set();
-        let totalMatches = 0;
-        let chunksCompleted = 0;
+    const seen = new Set();
+    let totalMatches = 0;
+    let chunksCompleted = 0;
+    const totalChunks = this.allowedChunks.length;
 
-        const displayBatch = (matches) => {
-            const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
-            if (newItems.length > 0) {
-                this.displayItems(newItems);
-                this.searchResultIndex += newItems.length;
-            }
-        };
-
-        for (const chunkIndex of this.allowedChunks) {
-            const promise = chunkIndex === -1
-                ? Promise.resolve(this.chunkCache.get(-1) || [])
-                : this.loadChunk(chunkIndex);
-
-            promise.then(chunk => {
-                if (this.searchController?.signal.aborted) return;
-
-                const localMatches = [];
-                for (const id of chunk) {
-                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                        seen.add(id);
-                        this.searchResults.push(id);
-                        localMatches.push(id);
-                        totalMatches++;
-                    }
-                }
-
-                displayBatch(localMatches);
-
-                if (chunkIndex >= 0) {
-                    const searchedMillion = (chunkIndex + 1) * 2;
-                    const matchText = totalMatches === 1 ? "match" : "matches";
-                    this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
-                } else if (chunkIndex === -1) {
-                    const matchText = totalMatches === 1 ? "match" : "matches";
-                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}${modeText}`);
-                }
-
-                chunksCompleted++;
-                if (chunksCompleted === this.allowedChunks.length && !this.searchController?.signal.aborted) {
-                    if (totalMatches === 0) {
-                        this.noResults.style.display = "block";
-                        this.loadMoreBtn.style.display = "none";
-                    } else {
-                        this.updateLoadMoreButton();
-                    }
-                    this.showLoading(false);
-                }
-            }).catch(err => {
-                console.error(`Error loading chunk ${chunkIndex}:`, err);
-            });
+    const displayBatch = (matches) => {
+        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
+        if (newItems.length > 0) {
+            this.displayItems(newItems);
+            this.searchResultIndex += newItems.length;
         }
+    };
+
+    const chunkPromises = this.allowedChunks.map(chunkIndex => {
+        const promise = chunkIndex === -1
+            ? Promise.resolve(this.chunkCache.get(-1) || [])
+            : this.loadChunk(chunkIndex);
+
+        return promise.then(chunk => {
+            if (this.searchController?.signal.aborted) return null;
+
+            const localMatches = [];
+            for (const id of chunk) {
+                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                    seen.add(id);
+                    this.searchResults.push(id);
+                    localMatches.push(id);
+                    totalMatches++;
+                }
+            }
+
+            displayBatch(localMatches);
+
+            chunksCompleted++;
+            
+            if (chunkIndex >= 0) {
+                const searchedMillion = (chunkIndex + 1) * 2;
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+            } else if (chunkIndex === -1) {
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
+            }
+
+            return { chunkIndex, matches: localMatches.length };
+        }).catch(err => {
+            console.error(`Error loading chunk ${chunkIndex}:`, err);
+            chunksCompleted++;
+            return null;
+        });
+    });
+    try {
+        await Promise.allSettled(chunkPromises);
+        if (!this.searchController?.signal.aborted) {
+            if (totalMatches === 0) {
+                this.noResults.style.display = "block";
+                this.loadMoreBtn.style.display = "none";
+                this.updateStats("No results found");
+            } else {
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Search complete: found ${totalMatches} ${matchText}`);
+                this.updateLoadMoreButton();
+            }
+        }
+    } catch (error) {
+        console.error("Search error:", error);
+        this.updateStats("Search error occurred");
+    } finally {
+        this.showLoading(false);
     }
+}
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
@@ -487,12 +486,10 @@ class YouTubeIDFinder {
 
     openSidebar() {
         this.sidebar.classList.add("open");
-        this.createOverlay();
     }
 
     closeSidebar() {
         this.sidebar.classList.remove("open");
-        this.removeOverlay();
     }
 
     createFilterButtons() {
@@ -582,14 +579,6 @@ class YouTubeIDFinder {
         if (window.innerWidth <= 768) {
             this.closeSidebar();
         }
-    }
-
-    createOverlay() {
-        // Implementation for overlay if needed
-    }
-
-    removeOverlay() {
-        // Implementation for overlay removal if needed
     }
 }
 
