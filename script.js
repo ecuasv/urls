@@ -413,7 +413,7 @@ async performSearch() {
             if (totalMatches === 0) {
                 this.noResults.style.display = "block";
                 this.loadMoreBtn.style.display = "none";
-                this.updateStats("No results found");
+                this.updateStats("");
             } else {
                 const matchText = totalMatches === 1 ? "match" : "matches";
                 this.updateStats(`Search complete: found ${totalMatches} ${matchText}`);
