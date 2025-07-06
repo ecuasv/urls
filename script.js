@@ -346,88 +346,66 @@ class YouTubeIDFinder {
         await this.performSearch();
     }
 
-async performSearch() {
-    this.showLoading(true);
-    this.updateStats("Searching...");
+    async performSearch() {
+        this.showLoading(true);
+        this.updateStats("Searching...");
 
-    const seen = new Set();
-    let totalMatches = 0;
-    let chunksCompleted = 0;
-    const totalChunks = this.allowedChunks.length;
+        const seen = new Set();
+        let totalMatches = 0;
+        let chunksCompleted = 0;
 
-    const displayBatch = (matches) => {
-        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
-        if (newItems.length > 0) {
-            this.displayItems(newItems);
-            this.searchResultIndex += newItems.length;
-        }
-    };
+        const displayBatch = (matches) => {
+            const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
+            if (newItems.length > 0) {
+                this.displayItems(newItems);
+                this.searchResultIndex += newItems.length;
+            }
+        };
 
-    // Create array of promises for all chunks
-    const chunkPromises = this.allowedChunks.map(chunkIndex => {
-        const promise = chunkIndex === -1
-            ? Promise.resolve(this.chunkCache.get(-1) || [])
-            : this.loadChunk(chunkIndex);
+        for (const chunkIndex of this.allowedChunks) {
+            const promise = chunkIndex === -1
+                ? Promise.resolve(this.chunkCache.get(-1) || [])
+                : this.loadChunk(chunkIndex);
 
-        return promise.then(chunk => {
-            if (this.searchController?.signal.aborted) return null;
+            promise.then(chunk => {
+                if (this.searchController?.signal.aborted) return;
 
-            const localMatches = [];
-            for (const id of chunk) {
-                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                    seen.add(id);
-                    this.searchResults.push(id);
-                    localMatches.push(id);
-                    totalMatches++;
+                const localMatches = [];
+                for (const id of chunk) {
+                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                        seen.add(id);
+                        this.searchResults.push(id);
+                        localMatches.push(id);
+                        totalMatches++;
+                    }
                 }
-            }
 
-            displayBatch(localMatches);
+                displayBatch(localMatches);
 
-            chunksCompleted++;
-            
-            if (chunkIndex >= 0) {
-                const searchedMillion = (chunkIndex + 1) * 2;
-                const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
-            } else if (chunkIndex === -1) {
-                const matchText = totalMatches === 1 ? "match" : "matches";
-                // Fixed: removed undefined modeText variable
-                this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
-            }
+                if (chunkIndex >= 0) {
+                    const searchedMillion = (chunkIndex + 1) * 2;
+                    const matchText = totalMatches === 1 ? "match" : "matches";
+                    this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+                } else if (chunkIndex === -1) {
+                    const matchText = totalMatches === 1 ? "match" : "matches";
+                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
+                }
 
-            return { chunkIndex, matches: localMatches.length };
-        }).catch(err => {
-            console.error(`Error loading chunk ${chunkIndex}:`, err);
-            chunksCompleted++;
-            return null;
-        });
-    });
-
-    // Wait for all chunks to complete
-    try {
-        await Promise.allSettled(chunkPromises);
-        
-        // Final update after all chunks are processed
-        if (!this.searchController?.signal.aborted) {
-            if (totalMatches === 0) {
-                this.noResults.style.display = "block";
-                this.loadMoreBtn.style.display = "none";
-                this.updateStats("");
-            } else {
-                const matchText = totalMatches === 1 ? "match" : "matches";
-                this.updateStats(`Search complete: found ${totalMatches} ${matchText}`);
-                this.updateLoadMoreButton();
-            }
+                chunksCompleted++;
+                if (chunksCompleted === this.allowedChunks.length && !this.searchController?.signal.aborted) {
+                    if (totalMatches === 0) {
+                        this.noResults.style.display = "block";
+                        this.loadMoreBtn.style.display = "none";
+                    } else {
+                        this.updateLoadMoreButton();
+                    }
+                    this.showLoading(false);
+                }
+            }).catch(err => {
+                console.error(`Error loading chunk ${chunkIndex}:`, err);
+            });
         }
-    } catch (error) {
-        console.error("Search error:", error);
-        this.updateStats("Search error occurred");
-    } finally {
-        // Ensure loading always stops
-        this.showLoading(false);
     }
-}
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
@@ -509,12 +487,10 @@ async performSearch() {
 
     openSidebar() {
         this.sidebar.classList.add("open");
-        this.createOverlay();
     }
 
     closeSidebar() {
         this.sidebar.classList.remove("open");
-        this.removeOverlay();
     }
 
     createFilterButtons() {
@@ -604,13 +580,5 @@ async performSearch() {
         if (window.innerWidth <= 768) {
             this.closeSidebar();
         }
-    }
-
-    createOverlay() {
-        // Implementation for overlay if needed
-    }
-
-    removeOverlay() {
-        // Implementation for overlay removal if needed
     }
 }
