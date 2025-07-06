@@ -388,7 +388,7 @@ class YouTubeIDFinder {
                     this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
                 } else if (chunkIndex === -1) {
                     const matchText = totalMatches === 1 ? "match" : "matches";
-                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}${modeText}`);
+                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
                 }
 
                 chunksCompleted++;
