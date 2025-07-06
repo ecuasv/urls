@@ -388,7 +388,7 @@ class YouTubeIDFinder {
                     this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
                 } else if (chunkIndex === -1) {
                     const matchText = totalMatches === 1 ? "match" : "matches";
-                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
+                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}${modeText}`);
                 }
 
                 chunksCompleted++;
@@ -487,10 +487,12 @@ class YouTubeIDFinder {
 
     openSidebar() {
         this.sidebar.classList.add("open");
+        this.createOverlay();
     }
 
     closeSidebar() {
         this.sidebar.classList.remove("open");
+        this.removeOverlay();
     }
 
     createFilterButtons() {
@@ -581,4 +583,13 @@ class YouTubeIDFinder {
             this.closeSidebar();
         }
     }
+
+    createOverlay() {
+        // Implementation for overlay if needed
+    }
+
+    removeOverlay() {
+        // Implementation for overlay removal if needed
+    }
 }
+
