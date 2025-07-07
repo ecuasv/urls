@@ -1,246 +1,851 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>JavaScript Error Detector</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #1a1a1a;
-            color: #fff;
-            padding: 20px;
-        }
-        .error-box {
-            background: #2a2a2a;
-            padding: 20px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border-left: 4px solid #f44336;
-        }
-        .success-box {
-            background: #2a2a2a;
-            padding: 20px;
-            margin: 10px 0;
-            border-radius: 8px;
-            border-left: 4px solid #4caf50;
-        }
-        .code-block {
-            background: #1a1a1a;
-            padding: 15px;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 14px;
-            overflow-x: auto;
-            margin: 10px 0;
-        }
-        button {
-            background: #4ecdc4;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin: 5px;
-        }
-        button:hover {
-            background: #45b7aa;
-        }
-        .test-section {
-            margin: 20px 0;
-            padding: 15px;
-            background: #333;
-            border-radius: 8px;
-        }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube ID Finder</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>🔍 JavaScript Error Detector</h1>
-    
-    <div class="test-section">
-        <h3>1. Script Tag Detection</h3>
-        <div id="script-check">Checking for script tags...</div>
+    <button id="limitSearchBtn" style="display: none;">
+    If the site crashes, click here to limit search to IDs with valid words only
+</button>
+    <button class="sidebar-toggle" id="sidebarToggle">
+    Filter IDs
+    </button>
+    <!-- Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
     </div>
-    
-    <div class="test-section">
-        <h3>2. Class Definition Test</h3>
-        <div id="class-check">Checking if YouTubeIDFinder is defined...</div>
+    <div class="sidebar-content">
+        <button class="filter-button clear-filter-btn" id="clearFilter">
+            Clear Filter
+        </button>
+        <div id="filterButtons">
+            <!-- Filter buttons will be dynamically added here -->
+        </div>
     </div>
-    
-    <div class="test-section">
-        <h3>3. Manual Class Loading Test</h3>
-        <button onclick="testManualLoad()">Test Manual Load</button>
-        <div id="manual-load-result"></div>
+</div>
+    <div class="container">
+        <div class="header">
+            <h1>YouTube ID Finder</h1>
+            <p>Search for words in YouTube video IDs</p>
+        </div>
+        
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search YouTube IDs..." autocomplete="off">
+        </div>
+        
+        <div class="stats" id="stats">
+        </div>
+        
+        <div id="grid"></div>
+        
+        <div id="loading">
+            <div class="loading-spinner"></div>
+            Loading...
+        </div>
+        
+        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">
+            Load More
+        </button>
+        
+        <div class="no-results" id="noResults" style="display: none;">
+            No matching IDs found
+        </div>
     </div>
-    
-    <div class="test-section">
-        <h3>4. JavaScript Syntax Validator</h3>
-        <button onclick="validateSyntax()">Validate Your JS Code</button>
-        <div id="syntax-result"></div>
-    </div>
-    
-    <div class="test-section">
-        <h3>5. All JavaScript Errors</h3>
-        <div id="all-errors">No errors detected yet</div>
-    </div>
+  <script id="initial-ids" type="application/json">
+    [
+  "----1-L-fQc",
+  "----9TnL24I",
+  "----meyKR48",
+  "----RdHLaoE",
+  "---0DMZnq9U",
+  "---0dO1ZocY",
+  "---0ilqrgSo",
+  "---0tgyEKHs",
+  "---0x9obGhc",
+  "---16MoRIlM",
+  "---1hl_hLf0",
+  "---1It_ZPyQ",
+  "---24eJHX7c",
+  "---25RbkH-Q",
+  "---27lxnCEI",
+  "---2885y9Kg",
+  "---2TgL9Oik",
+  "---3-KFLFo8",
+  "---3c1SrcJA",
+  "---3cBWQ8XU",
+  "---3ys7TnQA",
+  "---47911qbA",
+  "---47IWUaXI",
+  "---4NUmEeI0",
+  "---4ObKtxt4",
+  "---4wFyTdxw",
+  "---4X7zirc0",
+  "---5_-nABVI",
+  "---5C_vEKr4",
+  "---5G4vraGI",
+  "---5HQHiSpE",
+  "---5IHVK_kk",
+  "---5mjSxZ7U",
+  "---5UySMMok",
+  "---5YJbVhBs",
+  "---6_0FCGvs",
+  "---6dvIJccI",
+  "---6hgWeLjQ",
+  "---6J3CKhVk",
+  "---6NX0C8nw",
+  "---6QAjAFGY",
+  "---6ZaSNp3M",
+  "---72HMLmdc",
+  "---75m0NL2Q",
+  "---777dWWlA",
+  "---7ANgfkdw",
+  "---7HDeKN2w",
+  "---7tpc0eAI",
+  "---7XTyx29M",
+  "---8-lAtTj8",
+  "---8-RgqqQA",
+  "---8dukub-o",
+  "---8eR1kG9I",
+  "---93nHpU9Q",
+  "---98dd2usc",
+  "---9cBpg14Y",
+  "---9J2wEH6M",
+  "---9ODK0eeI",
+  "---9YL1k2TU",
+  "---_AF1FuwA",
+  "---_fVFlE68",
+  "---_LujDuFY",
+  "---_rQ3YMnc",
+  "---A87Y6of8",
+  "---abHr8RMw",
+  "---AhObfkAc",
+  "---ALEboNI8",
+  "---AludBYgU",
+  "---an6lH3gc",
+  "---an9w2f-M",
+  "---aPCddIDo",
+  "---AqqbFqNQ",
+  "---aUCzIWC4",
+  "---aWc-YvFM",
+  "---axHWiFAc",
+  "---AyuTNMEE",
+  "---b77nsDc0",
+  "---BCUwTa2w",
+  "---Bj2nbaLs",
+  "---bkjsPSVM",
+  "---BKrloEw0",
+  "---BmYmj-II",
+  "---BRbkg3Lw",
+  "---BRTx_FIU",
+  "---bsF1Bsrs",
+  "---BZzZFado",
+  "---C1xxJuqM",
+  "---CdtiqJg8",
+  "---cftkedFY",
+  "---CJbEVeKw",
+  "---Cm0T7N20",
+  "---cpCbUikU",
+  "---cTx9bQuA",
+  "---Cy7MhxNo",
+  "---d-3q6L98",
+  "---d2dVyG3w",
+  "---d57GQzGs",
+  "---Dcr9EtXs",
+  "---dEel94Xw",
+  "---DHLmcSfM",
+  "---dIPKRR4Q",
+  "---dKJg3Xjo",
+  "---dmeQPoOQ",
+  "---DmiqNJUI",
+  "---dmMBzI7U",
+  "---DMOap7dw",
+  "---dQs3pL5U",
+  "---DUD-BgqU",
+  "---E1AvUCl4",
+  "---E7EjUpRA",
+  "---EcQCPD5k",
+  "---edNB70aE",
+  "---EoXGjtA0",
+  "---eTOUwQSs",
+  "---EwGDlfAg",
+  "---EWsaOr4k",
+  "---ExQmc-2M",
+  "---F-ZDZmw8",
+  "---f3L7uHH8",
+  "---FBcZfi-A",
+  "---fdexPcY0",
+  "---Fg9yeYSU",
+  "---FHwSG9U4",
+  "---fmZ0ySzE",
+  "---fYMQhy50",
+  "---gbixRdjw",
+  "---GFDdFMJU",
+  "---GGcZeDgc",
+  "---GgK1TT2k",
+  "---GjLk4p7U",
+  "---h32aukSA",
+  "---H6RusJpc",
+  "---h87_25Hg",
+  "---h_BggiIQ",
+  "---HDttlhQg",
+  "---hJToG4pA",
+  "---hN-e2_sI",
+  "---HrcUBH40",
+  "---HUk9tqT8",
+  "---HyymYprE",
+  "---i-VOqUrY",
+  "---IampePrg",
+  "---IExeH0b8",
+  "---IFt2MiY4",
+  "---ihvx0z1g",
+  "---iipqMcIc",
+  "---iLqsqAFY",
+  "---IwwH9-H8",
+  "---iYJQH7fk",
+  "---Jh40ufbM",
+  "---JLvsZxwU",
+  "---kBMyUvZ4",
+  "---KdpNBHRs",
+  "---KEycxE3w",
+  "---KM5XvbGU",
+  "---KpVm0bOE",
+  "---kQEY-zxo",
+  "---Kwc-yrUM",
+  "---lCGkaPyA",
+  "---lcRhCgv0",
+  "---lECRS0-8",
+  "---lfrmqSLc",
+  "---LfzCuNio",
+  "---LH5QwmTc",
+  "---llTLrITg",
+  "---lnkrf6EM",
+  "---LS7wM6tI",
+  "---lUyVv9gw",
+  "---M5RE8nJo",
+  "---MCQ4btgQ",
+  "---mEiXCNQM",
+  "---MRK0TNHQ",
+  "---MxSea6bo",
+  "---MXV1jZV4",
+  "---NHMjOqAo",
+  "---niofbFMw",
+  "---nOgFTXQY",
+  "---O7HEiMa4",
+  "---oDHymwTU",
+  "---p_K6xoKA",
+  "---PcMaFq_0",
+  "---Pftnu-4Q",
+  "---PG_CqYmg",
+  "---PjgEr_7E",
+  "---PktoHrE4",
+  "---plzW7rsE",
+  "---PT-ZArnk",
+  "---pTx_1ej8",
+  "---pYYR38UY",
+  "---Q6eeGfd4",
+  "---QHn9Z8xc",
+  "---QmOJzacQ",
+  "---qN_8CTd8",
+  "---QokDR9z8",
+  "---QW-4Hhh8",
+  "---qy7AJF24",
+  "---R9ZXSVfo",
+  "---rEL8rQ28",
+  "---RfBIFQbA",
+  "---RhcXpjOQ"
+]
+  </script>
+    class YouTubeIDFinder {
+    constructor() {
+        this.grid = document.getElementById("grid");
+        this.loading = document.getElementById("loading");
+        this.searchInput = document.getElementById("search");
+        this.stats = document.getElementById("stats");
+        this.loadMoreBtn = document.getElementById("loadMoreBtn");
+        this.noResults = document.getElementById("noResults");
 
-    <script>
-        // Capture all JavaScript errors
-        const allErrors = [];
+        this.totalChunks = 39;
+        this.chunkCache = new Map();
+        this.currentDisplayChunk = 0;
+        this.currentDisplayIndex = 0;
+        this.itemsPerLoad = 200;
+        this.isLoading = false;
+        this.searchTerm = "";
+        this.searchResults = [];
+        this.searchResultIndex = 0;
+        this.searchTimeout = null;
+        this.searchController = null;
+        this.playlistIds = {
+            'playlist1.txt': 'PL_KtqxTCaHT6yYy5POQ8EqmtTQqctG9dh',
+            'playlist2.txt': 'PL_KtqxTCaHT5by5xMzIlrSVksZiSB_69Z',
+            'playlist3.txt': 'PL_KtqxTCaHT48V5Q3S_LTVPPC2Mz_7ikN'
+        };
+        // Sidebar properties
+        this.sidebar = document.getElementById("sidebar");
+        this.sidebarToggle = document.getElementById("sidebarToggle");
+        this.filterButtons = document.getElementById("filterButtons");
+        this.clearFilterBtn = document.getElementById("clearFilter");
+        this.activeFilter = null;
+        this.filterFiles = ['playlist1.txt', 'playlist2.txt', 'playlist3.txt', '10num.txt', 'upper.txt', 'lower.txt', '9w.txt', '8s.txt', '7s.txt', '6s.txt', '6+5s.txt', '6+4s.txt', '6+3s.txt', '6+3+2s.txt', '5+5s.txt', '5+4s.txt', '5+3+3s.txt', '5+2+2+2s.txt', '4+4+3s.txt'];
+        this.init();
+    }
+
+    detectDeviceClass() {
+        const ua = navigator.userAgent;
+        const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
+        return isMobile ? "mobile" : "desktop";
+    }
+
+    init() {
+        this.deviceClass = this.detectDeviceClass();
         
-        window.addEventListener('error', function(e) {
-            allErrors.push({
-                type: 'Runtime Error',
-                message: e.message,
-                filename: e.filename,
-                line: e.lineno,
-                column: e.colno,
-                stack: e.error ? e.error.stack : 'No stack trace'
-            });
-            updateAllErrors();
-        });
+        this.limitedMode = true;
+        this.allowedChunks = [-1]; 
         
-        window.addEventListener('unhandledrejection', function(e) {
-            allErrors.push({
-                type: 'Unhandled Promise Rejection',
-                message: e.reason,
-                stack: e.reason && e.reason.stack ? e.reason.stack : 'No stack trace'
-            });
-            updateAllErrors();
-        });
-        
-        function updateAllErrors() {
-            const errorsDiv = document.getElementById('all-errors');
-            if (allErrors.length === 0) {
-                errorsDiv.innerHTML = 'No errors detected yet';
-                return;
-            }
-            
-            errorsDiv.innerHTML = allErrors.map(error => `
-                <div class="error-box">
-                    <strong>${error.type}:</strong> ${error.message}<br>
-                    ${error.filename ? `File: ${error.filename}:${error.line}:${error.column}<br>` : ''}
-                    <div class="code-block">${error.stack}</div>
-                </div>
-            `).join('');
+        if (this.deviceClass === "mobile") {
+            this.itemsPerLoad = 50;
+        } else {
+            this.itemsPerLoad = 200;
         }
+
+        this.setupEventListeners();
+        this.loadInitialData();
+        this.setupExpandSearchButton();
+        this.setupClearSearchButton();
+        this.preloadChunks();
+    }
+
+    setupExpandSearchButton() {
+        this.expandSearchBtn = document.getElementById("limitSearchBtn"); 
         
-        function checkScriptTags() {
-            const scriptDiv = document.getElementById('script-check');
-            const scripts = document.querySelectorAll('script[src]');
+        if (this.deviceClass === "desktop") {
+            this.expandSearchBtn.style.display = "block";
+            this.expandSearchBtn.style.padding = "10px 16px";
+            this.expandSearchBtn.style.fontSize = "14px";
+            this.expandSearchBtn.style.marginBottom = "15px";
             
-            let html = `<div class="success-box">Found ${scripts.length} external script tags:</div>`;
+            this.expandSearchBtn.textContent = "Search All 78 Million IDs";
+            this.expandSearchBtn.title = "Expand search to include all YouTube IDs (uses more bandwidth)";
             
-            scripts.forEach((script, index) => {
-                const src = script.src;
-                const isLoaded = script.readyState === 'loaded' || script.readyState === 'complete';
-                
-                html += `
-                    <div class="code-block">
-                        Script ${index + 1}: ${src}<br>
-                        Status: ${isLoaded ? 'Loaded' : 'Loading/Unknown'}
-                    </div>
-                `;
+            this.expandSearchBtn.addEventListener("click", () => {
+                this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
+                this.limitedMode = false;
+                this.preloadAllChunks();
+                this.clearSearch();
+                this.updateStats("Full search mode activated: searching all 78 million IDs");
+                this.expandSearchBtn.style.display = "none";
             });
-            
-            if (scripts.length === 0) {
-                html = `<div class="error-box">No external script tags found! This might be why YouTubeIDFinder is not defined.</div>`;
-            }
-            
-            scriptDiv.innerHTML = html;
         }
+    }
+
+    async preloadAllChunks() {
+        const preloadPromises = [];
+        for (let i = 0; i < this.totalChunks; i++) {
+            preloadPromises.push(this.loadChunk(i));
+        }
+        await Promise.allSettled(preloadPromises);
+    }
+
+    setupClearSearchButton() {
+        const clearSearchBtn = document.createElement("button");
+        clearSearchBtn.id = "clearSearchBtn";
+        clearSearchBtn.textContent = "Clear";
+        clearSearchBtn.style.display = "none";
+        clearSearchBtn.style.marginLeft = "10px";
+        clearSearchBtn.style.padding = "8px 12px";
+        clearSearchBtn.style.background = "#dc3545";
+        clearSearchBtn.style.color = "white";
+        clearSearchBtn.style.border = "none";
+        clearSearchBtn.style.borderRadius = "4px";
+        clearSearchBtn.style.cursor = "pointer";
+        clearSearchBtn.style.fontSize = "14px";
+        clearSearchBtn.style.verticalAlign = "top";
         
-        function checkClassDefinition() {
-            const classDiv = document.getElementById('class-check');
-            
-            if (typeof YouTubeIDFinder !== 'undefined') {
-                classDiv.innerHTML = `
-                    <div class="success-box">
-                        ✅ YouTubeIDFinder class is defined!<br>
-                        Type: ${typeof YouTubeIDFinder}
-                    </div>
-                `;
+        const searchContainer = document.querySelector(".search-container");
+        searchContainer.style.display = "flex";
+        searchContainer.style.alignItems = "center";
+        searchContainer.appendChild(clearSearchBtn);
+
+        clearSearchBtn.addEventListener("click", () => {
+            this.searchInput.value = "";
+            this.clearSearch();
+            clearSearchBtn.style.display = "none";
+        });
+
+        clearSearchBtn.addEventListener("mouseover", () => {
+            clearSearchBtn.style.background = "#c82333";
+        });
+
+        clearSearchBtn.addEventListener("mouseout", () => {
+            clearSearchBtn.style.background = "#dc3545";
+        });
+
+        this.searchInput.addEventListener("input", () => {
+            clearSearchBtn.style.display = this.searchInput.value.trim() ? "block" : "none";
+        });
+    }
+
+    setupEventListeners() {
+        this.searchInput.addEventListener("input", () => {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.handleSearch();
+            }, 300);
+        });
+
+        this.loadMoreBtn.addEventListener("click", () => {
+            if (this.searchTerm) {
+                this.loadMoreSearchResults();
             } else {
-                classDiv.innerHTML = `
-                    <div class="error-box">
-                        ❌ YouTubeIDFinder class is NOT defined!<br>
-                        This means either:<br>
-                        1. Your JavaScript file isn't loading<br>
-                        2. There's a syntax error preventing the class from being defined<br>
-                        3. The class is defined in a different scope
-                    </div>
-                `;
+                this.loadMoreData();
             }
-        }
-        
-        function testManualLoad() {
-            const resultDiv = document.getElementById('manual-load-result');
-            resultDiv.innerHTML = 'Testing manual load...';
-            
-            // Try to define a minimal version of the class
-            try {
-                if (typeof YouTubeIDFinder === 'undefined') {
-                    // Create a minimal test class
-                    window.YouTubeIDFinder = class {
-                        constructor() {
-                            console.log('Test YouTubeIDFinder created');
-                        }
-                    };
-                    
-                    const testInstance = new YouTubeIDFinder();
-                    resultDiv.innerHTML = `
-                        <div class="success-box">
-                            ✅ Successfully created test YouTubeIDFinder class!<br>
-                            This proves the issue is with your original script loading.
-                        </div>
-                    `;
-                } else {
-                    const testInstance = new YouTubeIDFinder();
-                    resultDiv.innerHTML = `
-                        <div class="success-box">
-                            ✅ YouTubeIDFinder class works! The issue might be elsewhere.
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `
-                    <div class="error-box">
-                        ❌ Error creating YouTubeIDFinder: ${error.message}<br>
-                        <div class="code-block">${error.stack}</div>
-                    </div>
-                `;
-            }
-        }
-        
-        function validateSyntax() {
-            const resultDiv = document.getElementById('syntax-result');
-            resultDiv.innerHTML = `
-                <div class="code-block">
-                    To validate your JavaScript syntax:
-                    <br><br>
-                    1. Copy your entire JavaScript code
-                    <br>
-                    2. Paste it into: <a href="https://jshint.com/" target="_blank">JSHint.com</a>
-                    <br>
-                    3. Or use browser DevTools: F12 → Console → Paste code
-                    <br><br>
-                    Common syntax errors that prevent class definition:
-                    <br>• Missing closing braces }
-                    <br>• Missing semicolons in strict mode
-                    <br>• Unclosed strings or comments
-                    <br>• Invalid characters (smart quotes, etc.)
-                </div>
-            `;
-        }
-        
-        // Run initial checks
-        document.addEventListener('DOMContentLoaded', function() {
-            checkScriptTags();
-            checkClassDefinition();
-            
-            // Check again after a delay in case scripts are still loading
-            setTimeout(() => {
-                checkClassDefinition();
-            }, 2000);
         });
-    </script>
+
+        window.addEventListener("scroll", () => {
+            if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+                if (!this.isLoading && this.loadMoreBtn.style.display !== "none") {
+                    this.loadMoreBtn.click();
+                }
+            }
+        });
+
+        // Sidebar functionality
+        this.sidebarToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.toggleSidebar();
+        });
+        this.clearFilterBtn.addEventListener("click", () => {
+            this.clearFilter();
+        });
+        document.addEventListener("click", (e) => {
+            this.handleClickOutside(e);
+        });
+        this.sidebar.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+        this.createFilterButtons();
+    }
+
+    handleClickOutside(event) {
+        if (!this.sidebar.classList.contains("open")) return;
+        if (!this.sidebar.contains(event.target) && 
+            !this.sidebarToggle.contains(event.target)) {
+            this.closeSidebar();
+        }
+    }
+
+    async loadChunk(chunkIndex) {
+        if (this.chunkCache.has(chunkIndex)) {
+            return this.chunkCache.get(chunkIndex);
+        }
+
+        try {
+            const response = await fetch(`chunk_${chunkIndex}.txt`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+            const text = await response.text();
+            const ids = text.split("\n").filter(id => id.trim());
+            this.chunkCache.set(chunkIndex, ids);
+            return ids;
+        } catch (error) {
+            console.error(`Error loading chunk ${chunkIndex}:`, error);
+            return [];
+        }
+    }
+
+    async preloadChunks() {
+        try {
+            const response = await fetch("found.txt");
+            if (response.ok) {
+                const text = await response.text();
+                const ids = text.split("\n").filter(id => id.trim());
+                this.chunkCache.set(-1, ids);
+            }
+        } catch (err) {
+            console.error("Error preloading found.txt:", err);
+        }
+        
+        const filterPreloadPromises = this.filterFiles.map(async (filename) => {
+            try {
+                const response = await fetch(filename);
+                if (response.ok) {
+                    const text = await response.text();
+                    const ids = text.split("\n").filter(id => id.trim());
+                    this.chunkCache.set(`filter_${filename}`, ids);
+                }
+            } catch (err) {
+                console.error(`Error preloading filter ${filename}:`, err);
+            }
+        });
+        await Promise.allSettled(filterPreloadPromises);
+    }
+
+    clearChunkCache() {
+        const foundData = this.chunkCache.get(-1);
+        const filterData = new Map();
+        
+        for (const [key, value] of this.chunkCache.entries()) {
+            if (key.toString().startsWith('filter_')) {
+                filterData.set(key, value);
+            }
+        }
+        
+        this.chunkCache.clear();
+        if (foundData) {
+            this.chunkCache.set(-1, foundData);
+        }
+        
+        for (const [key, value] of filterData.entries()) {
+            this.chunkCache.set(key, value);
+        }
+    }
+
+    async loadInitialData() {
+        this.showLoading(true);
+        try {
+            const initialDataEl = document.getElementById("initial-ids");
+            let initialIds = [];
+            if (initialDataEl) {
+                initialIds = JSON.parse(initialDataEl.textContent);
+            }
+            const itemsToShow = Math.min(this.itemsPerLoad, initialIds.length);
+            this.displayItems(initialIds.slice(0, itemsToShow));
+            this.currentDisplayIndex = itemsToShow;
+            this.updateLoadMoreButton();
+            this.initialLoaded = true;
+            
+            this.updateStats("Displaying known words only - click 'Search All 78 Million IDs' to expand search scope");
+        } catch (error) {
+            console.error("Error loading initial data:", error);
+            this.updateStats("Error loading data");
+        }
+        this.showLoading(false);
+    }
+
+    async loadMoreData() {
+        if (this.isLoading) return;
+        this.showLoading(true);
+
+        try {
+            const currentChunk = await this.loadChunk(this.currentDisplayChunk);
+            if (this.currentDisplayIndex < currentChunk.length) {
+                const start = this.currentDisplayIndex;
+                const end = Math.min(start + this.itemsPerLoad, currentChunk.length);
+                this.displayItems(currentChunk.slice(start, end));
+                this.currentDisplayIndex = end;
+            } else {
+                this.currentDisplayChunk++;
+                this.currentDisplayIndex = 0;
+                if (this.currentDisplayChunk < this.totalChunks) {
+                    const nextChunk = await this.loadChunk(this.currentDisplayChunk);
+                    const itemsToShow = Math.min(this.itemsPerLoad, nextChunk.length);
+                    this.displayItems(nextChunk.slice(0, itemsToShow));
+                    this.currentDisplayIndex = itemsToShow;
+                }
+            }
+
+            this.updateStats(`Loaded ${this.grid.children.length} IDs total`);
+            this.updateLoadMoreButton();
+        } catch (error) {
+            console.error("Error loading more data:", error);
+        }
+
+        this.showLoading(false);
+    }
+
+    async handleSearch() {
+        const query = this.searchInput.value.trim();
+        if (this.activeFilter) {
+            this.clearFilter();
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+
+        if (this.searchController) {
+            this.searchController.abort();
+        }
+
+        if (!query) {
+            this.clearSearch();
+            return;
+        }
+
+        if (!/^[a-zA-Z0-9\-_]+$/.test(query) || query.length > 11) {
+            this.grid.innerHTML = "";
+            this.updateStats("Invalid characters in search");
+            this.noResults.style.display = "block";
+            this.loadMoreBtn.style.display = "none";
+            return;
+        }
+
+        this.searchTerm = query.toLowerCase();
+        this.searchResults = [];
+        this.searchResultIndex = 0;
+        this.grid.innerHTML = "";
+        this.noResults.style.display = "none";
+
+        this.searchController = new AbortController();
+        await this.performSearch();
+    }
+
+async performSearch() {
+    this.showLoading(true);
+    this.updateStats("Searching...");
+
+    const seen = new Set();
+    let totalMatches = 0;
+    let chunksCompleted = 0;
+    const totalChunks = this.allowedChunks.length;
+
+    const displayBatch = (matches) => {
+        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
+        if (newItems.length > 0) {
+            this.displayItems(newItems);
+            this.searchResultIndex += newItems.length;
+        }
+    };
+
+    const chunkPromises = this.allowedChunks.map(chunkIndex => {
+        const promise = chunkIndex === -1
+            ? Promise.resolve(this.chunkCache.get(-1) || [])
+            : this.loadChunk(chunkIndex);
+
+        return promise.then(chunk => {
+            if (this.searchController?.signal.aborted) return null;
+
+            const localMatches = [];
+            for (const id of chunk) {
+                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                    seen.add(id);
+                    this.searchResults.push(id);
+                    localMatches.push(id);
+                    totalMatches++;
+                }
+            }
+
+            displayBatch(localMatches);
+
+            chunksCompleted++;
+            
+            if (chunkIndex >= 0) {
+                const searchedMillion = (chunkIndex + 1) * 2;
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+            } else if (chunkIndex === -1) {
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
+            }
+
+            return { chunkIndex, matches: localMatches.length };
+        }).catch(err => {
+            console.error(`Error loading chunk ${chunkIndex}:`, err);
+            chunksCompleted++;
+            return null;
+        });
+    });
+    try {
+        await Promise.allSettled(chunkPromises);
+        if (!this.searchController?.signal.aborted) {
+            if (totalMatches === 0) {
+                this.noResults.style.display = "block";
+                this.loadMoreBtn.style.display = "none";
+                this.updateStats("No results found");
+            } else {
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Search complete: found ${totalMatches} ${matchText}`);
+                this.updateLoadMoreButton();
+            }
+        }
+    } catch (error) {
+        console.error("Search error:", error);
+        this.updateStats("Search error occurred");
+    } finally {
+        this.showLoading(false);
+    }
+}
+
+    loadMoreSearchResults() {
+        if (this.searchResultIndex >= this.searchResults.length) return;
+        const end = Math.min(this.searchResultIndex + this.itemsPerLoad, this.searchResults.length);
+        this.displayItems(this.searchResults.slice(this.searchResultIndex, end));
+        this.searchResultIndex = end;
+        this.updateStats(`Showing ${this.searchResultIndex} of ${this.searchResults.length} search results`);
+        this.updateLoadMoreButton();
+    }
+
+    displayItems(items, playlistId = null) {
+        const fragment = document.createDocumentFragment();
+        for (const id of items) {
+            const link = document.createElement("a");
+            
+            if (playlistId) {
+                link.href = `https://www.youtube.com/watch?v=${id}&list=${playlistId}`;
+            } else {
+                link.href = `https://www.youtube.com/watch?v=${id}`;
+            }
+            
+            link.target = "_blank";
+            link.innerHTML = this.highlightMatch(id);
+            link.rel = "noopener noreferrer";
+            fragment.appendChild(link);
+        }
+        requestAnimationFrame(() => {
+            this.grid.appendChild(fragment);
+        });
+    }
+
+    clearSearch() {
+        this.searchTerm = "";
+        this.searchResults = [];
+        this.searchResultIndex = 0;
+        this.grid.innerHTML = "";
+        this.noResults.style.display = "none";
+
+        this.currentDisplayChunk = 0;
+        this.currentDisplayIndex = 0;
+        this.loadInitialData();
+    }
+
+    updateLoadMoreButton() {
+        const hasMore = this.searchTerm
+            ? this.searchResultIndex < this.searchResults.length
+            : this.currentDisplayChunk < this.totalChunks - 1 ||
+              this.currentDisplayIndex < (this.chunkCache.get(this.currentDisplayChunk)?.length || 0);
+
+        this.loadMoreBtn.style.display = hasMore ? "block" : "none";
+        this.loadMoreBtn.disabled = this.isLoading;
+    }
+
+    showLoading(show) {
+        this.isLoading = show;
+        this.loading.style.display = show ? "block" : "none";
+        this.loadMoreBtn.disabled = show;
+    }
+
+    updateStats(message) {
+        this.stats.textContent = message;
+    }
+
+    highlightMatch(id) {
+        if (!this.searchTerm) return id;
+        const escaped = this.searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(${escaped})`, 'ig');
+        return id.replace(regex, '<mark>$1</mark>');
+    }
+
+    // Sidebar methods
+    toggleSidebar() {
+        if (this.sidebar.classList.contains("open")) {
+            this.closeSidebar();
+        } else {
+            this.openSidebar();
+        }
+    }
+
+    openSidebar() {
+        this.sidebar.classList.add("open");
+    }
+
+    closeSidebar() {
+        this.sidebar.classList.remove("open");
+    }
+
+    createFilterButtons() {
+        const filterDisplayNames = {
+            'playlist1.txt': 'IDs related to the video itself',
+            'playlist2.txt': 'selected 7+ letters', 
+            'playlist3.txt': 'selected 6 letters',
+            '10num.txt': '10 numbers',
+            'upper.txt': 'ALL UPPERCASE',
+            'lower.txt': 'all lowercase',
+            '9w.txt': '9 letter words',
+            '8s.txt': '8 letter words',
+            '7s.txt': '7 letter words',
+            '6s.txt': '6 letter words',
+            '6+5s.txt': '6+5 letter words',
+            '6+4s.txt': '6+4 letter words',
+            '6+3s.txt': '6+3 letter words',
+            '6+3+2s.txt': '6+3+2 letter words',
+            '5+5s.txt': '5+5 letter words',
+            '5+4s.txt': '5+4 letter words',
+            '5+3+3s.txt': '5+3+3 letter words',
+            '5+2+2+2s.txt': '5+2+2+2 letter words',
+            '4+4+3s.txt': '4+4+3 letter words'
+        };
+
+        this.filterFiles.forEach(filename => {
+            const button = document.createElement("button");
+            button.className = "filter-button";
+            button.textContent = filterDisplayNames[filename] || filename.replace('.txt', '');
+            button.addEventListener("click", () => {
+                this.loadFilter(filename, button);
+            });
+            this.filterButtons.appendChild(button);
+        });
+    }
+
+    async loadFilter(filename, buttonElement) {
+        if (this.isLoading) return;
+        
+        document.querySelectorAll('.filter-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        buttonElement.classList.add('active');
+        
+        this.activeFilter = filename;
+        this.showLoading(true);
+        this.updateStats(`Loading filter: ${filename.replace('.txt', '')}...`);
+        
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const text = await response.text();
+            const ids = text.split("\n").filter(line => line.trim());
+            this.grid.innerHTML = "";
+            
+            const playlistId = this.playlistIds[filename];
+            this.displayItems(ids, playlistId);
+            
+            this.updateStats(`Showing ${ids.length} IDs`);
+            this.loadMoreBtn.style.display = "none";
+            this.noResults.style.display = ids.length === 0 ? "block" : "none";
+            
+            if (window.innerWidth <= 768) {
+                this.sidebar.classList.remove("open");
+            }
+            
+        } catch (error) {
+            console.error(`Error loading filter ${filename}:`, error);
+            this.updateStats(`Error loading filter: ${filename.replace('.txt', '')}`);
+        }
+        
+        this.showLoading(false);
+    }
+
+    clearFilter() {
+        this.activeFilter = null;
+        document.querySelectorAll('.filter-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        this.grid.innerHTML = "";
+        this.currentDisplayChunk = 0;
+        this.currentDisplayIndex = 0;
+        this.loadInitialData();
+        
+        if (window.innerWidth <= 768) {
+            this.closeSidebar();
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    new YouTubeIDFinder();
+});
+
+</script>
 </body>
 </html>
