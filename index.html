@@ -1,82 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube ID Finder Debug Tool</title>
+    <title>JavaScript Error Detector</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
             font-family: Arial, sans-serif;
             background: #1a1a1a;
             color: #fff;
             padding: 20px;
         }
-
-        .debug-container {
-            max-width: 1200px;
-            margin: 0 auto;
+        .error-box {
             background: #2a2a2a;
             padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        h1 {
-            color: #ff6b6b;
-            margin-bottom: 20px;
-        }
-
-        .debug-section {
-            background: #333;
-            padding: 15px;
             margin: 10px 0;
-            border-radius: 5px;
-            border-left: 4px solid #4ecdc4;
+            border-radius: 8px;
+            border-left: 4px solid #f44336;
         }
-
-        .debug-section h3 {
-            color: #4ecdc4;
-            margin-bottom: 10px;
+        .success-box {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4caf50;
         }
-
-        .status {
-            padding: 5px 10px;
-            border-radius: 3px;
-            margin: 5px 0;
-            font-weight: bold;
-        }
-
-        .status.pass {
-            background: #4caf50;
-            color: white;
-        }
-
-        .status.fail {
-            background: #f44336;
-            color: white;
-        }
-
-        .status.warning {
-            background: #ff9800;
-            color: white;
-        }
-
         .code-block {
             background: #1a1a1a;
-            padding: 10px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
             overflow-x: auto;
             margin: 10px 0;
         }
-
         button {
             background: #4ecdc4;
             color: white;
@@ -86,471 +41,206 @@
             cursor: pointer;
             margin: 5px;
         }
-
         button:hover {
             background: #45b7aa;
         }
-
-        .network-test {
+        .test-section {
             margin: 20px 0;
-        }
-
-        .file-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .file-list li {
-            padding: 5px 0;
-            border-bottom: 1px solid #444;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* Add some basic styling for the original elements */
-        #grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 8px;
-            margin: 20px 0;
-        }
-
-        #grid a {
+            padding: 15px;
             background: #333;
-            color: #4ecdc4;
-            text-decoration: none;
-            padding: 8px;
-            border-radius: 4px;
-            text-align: center;
-            font-size: 12px;
-        }
-
-        #grid a:hover {
-            background: #444;
-        }
-
-        .search-container {
-            margin: 20px 0;
-        }
-
-        #search {
-            width: 300px;
-            padding: 10px;
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-            border-radius: 5px;
-        }
-
-        #sidebar {
-            position: fixed;
-            top: 0;
-            left: -300px;
-            width: 300px;
-            height: 100vh;
-            background: #2a2a2a;
-            transition: left 0.3s ease;
-            overflow-y: auto;
-            z-index: 1000;
-            padding: 20px;
-        }
-
-        #sidebar.open {
-            left: 0;
-        }
-
-        .filter-button {
-            display: block;
-            width: 100%;
-            margin: 5px 0;
-            background: #444;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            text-align: left;
-        }
-
-        .filter-button:hover {
-            background: #555;
-        }
-
-        .filter-button.active {
-            background: #4ecdc4;
-        }
-
-        #sidebarToggle {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 1001;
+            border-radius: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="debug-container">
-        <h1>🔍 YouTube ID Finder Debug Tool</h1>
-        
-        <div class="debug-section">
-            <h3>DOM Elements Check</h3>
-            <div id="dom-check">Checking...</div>
-        </div>
-
-        <div class="debug-section">
-            <h3>File Access Test</h3>
-            <div id="file-check">Testing file access...</div>
-            <button onclick="testFileAccess()">Test File Access</button>
-        </div>
-
-        <div class="debug-section">
-            <h3>Initial Data Check</h3>
-            <div id="initial-data-check">Checking initial data...</div>
-        </div>
-
-        <div class="debug-section">
-            <h3>Network Requests</h3>
-            <div id="network-requests">No requests made yet</div>
-            <button onclick="clearNetworkLog()">Clear Network Log</button>
-        </div>
-
-        <div class="debug-section">
-            <h3>Console Errors</h3>
-            <div id="console-errors">No errors captured yet</div>
-        </div>
-
-        <div class="debug-section">
-            <h3>Live Test</h3>
-            <button onclick="runLiveTest()">Run Live Test</button>
-            <div id="live-test-results"></div>
-        </div>
+    <h1>🔍 JavaScript Error Detector</h1>
+    
+    <div class="test-section">
+        <h3>1. Script Tag Detection</h3>
+        <div id="script-check">Checking for script tags...</div>
     </div>
-
-    <!-- Original HTML structure for testing -->
-    <div style="margin-top: 20px;">
-        <button id="sidebarToggle">☰ Filters</button>
-        
-        <div class="search-container">
-            <input type="text" id="search" placeholder="Search YouTube IDs...">
-            <button id="limitSearchBtn" style="display: none;">Search All</button>
-        </div>
-        
-        <div id="stats">Ready</div>
-        <div id="loading" style="display: none;">Loading...</div>
-        <div id="noResults" style="display: none;">No results found</div>
-        
-        <div id="grid"></div>
-        <button id="loadMoreBtn" style="display: none;">Load More</button>
-        
-        <div id="sidebar">
-            <h3>Filters</h3>
-            <div id="filterButtons"></div>
-            <button id="clearFilter">Clear Filter</button>
-        </div>
+    
+    <div class="test-section">
+        <h3>2. Class Definition Test</h3>
+        <div id="class-check">Checking if YouTubeIDFinder is defined...</div>
     </div>
-
-    <!-- Sample initial data for testing -->
-    <script type="application/json" id="initial-ids">
-    ["dQw4w9WgXcQ", "jNQXAC9IVRw", "y6120QOlsfU", "kJQP7kiw5Fk", "L_jWHffIx5E", "fJ9rUzIMcZQ", "QB7ACr7pUuE", "2vjPBrBU-TM", "sTSA_sWGM44", "kXYiU_JCYtU"]
-    </script>
+    
+    <div class="test-section">
+        <h3>3. Manual Class Loading Test</h3>
+        <button onclick="testManualLoad()">Test Manual Load</button>
+        <div id="manual-load-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. JavaScript Syntax Validator</h3>
+        <button onclick="validateSyntax()">Validate Your JS Code</button>
+        <div id="syntax-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>5. All JavaScript Errors</h3>
+        <div id="all-errors">No errors detected yet</div>
+    </div>
 
     <script>
-        // Network request interceptor
-        const originalFetch = window.fetch;
-        const networkRequests = [];
-
-        window.fetch = function(...args) {
-            const url = args[0];
-            const startTime = Date.now();
-            
-            networkRequests.push({
-                url: url,
-                timestamp: new Date().toISOString(),
-                status: 'pending'
-            });
-            
-            updateNetworkLog();
-            
-            return originalFetch.apply(this, args)
-                .then(response => {
-                    const requestIndex = networkRequests.findIndex(req => 
-                        req.url === url && req.status === 'pending'
-                    );
-                    if (requestIndex !== -1) {
-                        networkRequests[requestIndex].status = response.status;
-                        networkRequests[requestIndex].ok = response.ok;
-                        networkRequests[requestIndex].duration = Date.now() - startTime;
-                    }
-                    updateNetworkLog();
-                    return response;
-                })
-                .catch(error => {
-                    const requestIndex = networkRequests.findIndex(req => 
-                        req.url === url && req.status === 'pending'
-                    );
-                    if (requestIndex !== -1) {
-                        networkRequests[requestIndex].status = 'error';
-                        networkRequests[requestIndex].error = error.message;
-                        networkRequests[requestIndex].duration = Date.now() - startTime;
-                    }
-                    updateNetworkLog();
-                    throw error;
-                });
-        };
-
-        // Console error capturing
-        const consoleErrors = [];
-        const originalConsoleError = console.error;
+        // Capture all JavaScript errors
+        const allErrors = [];
         
-        console.error = function(...args) {
-            consoleErrors.push({
-                timestamp: new Date().toISOString(),
-                message: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ')
+        window.addEventListener('error', function(e) {
+            allErrors.push({
+                type: 'Runtime Error',
+                message: e.message,
+                filename: e.filename,
+                line: e.lineno,
+                column: e.colno,
+                stack: e.error ? e.error.stack : 'No stack trace'
             });
-            updateConsoleErrors();
-            originalConsoleError.apply(console, args);
-        };
-
-        function updateNetworkLog() {
-            const networkDiv = document.getElementById('network-requests');
-            if (networkRequests.length === 0) {
-                networkDiv.innerHTML = 'No requests made yet';
+            updateAllErrors();
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            allErrors.push({
+                type: 'Unhandled Promise Rejection',
+                message: e.reason,
+                stack: e.reason && e.reason.stack ? e.reason.stack : 'No stack trace'
+            });
+            updateAllErrors();
+        });
+        
+        function updateAllErrors() {
+            const errorsDiv = document.getElementById('all-errors');
+            if (allErrors.length === 0) {
+                errorsDiv.innerHTML = 'No errors detected yet';
                 return;
             }
             
-            networkDiv.innerHTML = networkRequests.map(req => {
-                const statusClass = req.status === 'error' ? 'fail' : 
-                                   req.ok === false ? 'fail' : 
-                                   req.status === 'pending' ? 'warning' : 'pass';
-                return `
-                    <div class="status ${statusClass}">
-                        ${req.url} - ${req.status} ${req.duration ? `(${req.duration}ms)` : ''}
-                        ${req.error ? `- Error: ${req.error}` : ''}
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function updateConsoleErrors() {
-            const errorsDiv = document.getElementById('console-errors');
-            if (consoleErrors.length === 0) {
-                errorsDiv.innerHTML = 'No errors captured yet';
-                return;
-            }
-            
-            errorsDiv.innerHTML = consoleErrors.map(error => `
-                <div class="status fail">
-                    ${error.timestamp}: ${error.message}
+            errorsDiv.innerHTML = allErrors.map(error => `
+                <div class="error-box">
+                    <strong>${error.type}:</strong> ${error.message}<br>
+                    ${error.filename ? `File: ${error.filename}:${error.line}:${error.column}<br>` : ''}
+                    <div class="code-block">${error.stack}</div>
                 </div>
             `).join('');
         }
-
-        function clearNetworkLog() {
-            networkRequests.length = 0;
-            updateNetworkLog();
-        }
-
-        function checkDOMElements() {
-            const requiredElements = [
-                'grid', 'loading', 'search', 'stats', 'loadMoreBtn', 'noResults',
-                'sidebar', 'sidebarToggle', 'filterButtons', 'clearFilter', 'initial-ids'
-            ];
+        
+        function checkScriptTags() {
+            const scriptDiv = document.getElementById('script-check');
+            const scripts = document.querySelectorAll('script[src]');
             
-            const domDiv = document.getElementById('dom-check');
-            let html = '';
+            let html = `<div class="success-box">Found ${scripts.length} external script tags:</div>`;
             
-            requiredElements.forEach(id => {
-                const element = document.getElementById(id);
-                const exists = element !== null;
-                const statusClass = exists ? 'pass' : 'fail';
-                html += `<div class="status ${statusClass}">${id}: ${exists ? 'Found' : 'Missing'}</div>`;
+            scripts.forEach((script, index) => {
+                const src = script.src;
+                const isLoaded = script.readyState === 'loaded' || script.readyState === 'complete';
+                
+                html += `
+                    <div class="code-block">
+                        Script ${index + 1}: ${src}<br>
+                        Status: ${isLoaded ? 'Loaded' : 'Loading/Unknown'}
+                    </div>
+                `;
             });
             
-            domDiv.innerHTML = html;
-        }
-
-        function checkInitialData() {
-            const initialDiv = document.getElementById('initial-data-check');
-            const initialDataEl = document.getElementById('initial-ids');
-            
-            if (!initialDataEl) {
-                initialDiv.innerHTML = '<div class="status fail">initial-ids element not found</div>';
-                return;
+            if (scripts.length === 0) {
+                html = `<div class="error-box">No external script tags found! This might be why YouTubeIDFinder is not defined.</div>`;
             }
             
-            try {
-                const data = JSON.parse(initialDataEl.textContent);
-                const isArray = Array.isArray(data);
-                const length = isArray ? data.length : 0;
-                
-                initialDiv.innerHTML = `
-                    <div class="status ${isArray ? 'pass' : 'fail'}">
-                        Data type: ${isArray ? 'Array' : typeof data}
-                    </div>
-                    <div class="status ${length > 0 ? 'pass' : 'fail'}">
-                        Data length: ${length}
-                    </div>
-                    <div class="code-block">
-                        Sample data: ${JSON.stringify(data.slice(0, 3), null, 2)}
+            scriptDiv.innerHTML = html;
+        }
+        
+        function checkClassDefinition() {
+            const classDiv = document.getElementById('class-check');
+            
+            if (typeof YouTubeIDFinder !== 'undefined') {
+                classDiv.innerHTML = `
+                    <div class="success-box">
+                        ✅ YouTubeIDFinder class is defined!<br>
+                        Type: ${typeof YouTubeIDFinder}
                     </div>
                 `;
-            } catch (error) {
-                initialDiv.innerHTML = `
-                    <div class="status fail">JSON Parse Error: ${error.message}</div>
-                    <div class="code-block">Raw content: ${initialDataEl.textContent.substring(0, 200)}...</div>
+            } else {
+                classDiv.innerHTML = `
+                    <div class="error-box">
+                        ❌ YouTubeIDFinder class is NOT defined!<br>
+                        This means either:<br>
+                        1. Your JavaScript file isn't loading<br>
+                        2. There's a syntax error preventing the class from being defined<br>
+                        3. The class is defined in a different scope
+                    </div>
                 `;
             }
         }
-
-        async function testFileAccess() {
-            const fileDiv = document.getElementById('file-check');
-            const testFiles = ['found.txt', 'chunk_0.txt', 'playlist1.txt'];
+        
+        function testManualLoad() {
+            const resultDiv = document.getElementById('manual-load-result');
+            resultDiv.innerHTML = 'Testing manual load...';
             
-            fileDiv.innerHTML = 'Testing file access...';
-            
-            const results = [];
-            for (const file of testFiles) {
-                try {
-                    const response = await fetch(file);
-                    const status = response.ok ? 'pass' : 'fail';
-                    const text = response.ok ? await response.text() : '';
-                    const preview = text.substring(0, 100).replace(/\n/g, '\\n');
-                    
-                    results.push(`
-                        <div class="status ${status}">
-                            ${file}: ${response.status} ${response.statusText}
-                            ${response.ok ? `(${text.split('\\n').length} lines)` : ''}
-                        </div>
-                        ${response.ok ? `<div class="code-block">Preview: ${preview}...</div>` : ''}
-                    `);
-                } catch (error) {
-                    results.push(`
-                        <div class="status fail">
-                            ${file}: Error - ${error.message}
-                        </div>
-                    `);
-                }
-            }
-            
-            fileDiv.innerHTML = results.join('');
-        }
-
-        async function runLiveTest() {
-            const resultsDiv = document.getElementById('live-test-results');
-            resultsDiv.innerHTML = 'Running live test...';
-            
+            // Try to define a minimal version of the class
             try {
-                // Try to instantiate the YouTubeIDFinder class
-                const finder = new YouTubeIDFinder();
-                resultsDiv.innerHTML = '<div class="status pass">YouTubeIDFinder class instantiated successfully</div>';
-                
-                // Test if initial data loads
-                setTimeout(() => {
-                    const gridItems = document.querySelectorAll('#grid a');
-                    const hasItems = gridItems.length > 0;
+                if (typeof YouTubeIDFinder === 'undefined') {
+                    // Create a minimal test class
+                    window.YouTubeIDFinder = class {
+                        constructor() {
+                            console.log('Test YouTubeIDFinder created');
+                        }
+                    };
                     
-                    resultsDiv.innerHTML += `
-                        <div class="status ${hasItems ? 'pass' : 'fail'}">
-                            Grid items loaded: ${gridItems.length}
+                    const testInstance = new YouTubeIDFinder();
+                    resultDiv.innerHTML = `
+                        <div class="success-box">
+                            ✅ Successfully created test YouTubeIDFinder class!<br>
+                            This proves the issue is with your original script loading.
                         </div>
                     `;
-                }, 2000);
-                
+                } else {
+                    const testInstance = new YouTubeIDFinder();
+                    resultDiv.innerHTML = `
+                        <div class="success-box">
+                            ✅ YouTubeIDFinder class works! The issue might be elsewhere.
+                        </div>
+                    `;
+                }
             } catch (error) {
-                resultsDiv.innerHTML = `<div class="status fail">Error creating YouTubeIDFinder: ${error.message}</div>`;
+                resultDiv.innerHTML = `
+                    <div class="error-box">
+                        ❌ Error creating YouTubeIDFinder: ${error.message}<br>
+                        <div class="code-block">${error.stack}</div>
+                    </div>
+                `;
             }
         }
-
-        // Initialize debug checks
-        document.addEventListener('DOMContentLoaded', function() {
-            checkDOMElements();
-            checkInitialData();
-            
-            // Also test the original code
-            setTimeout(() => {
-                try {
-                    eval(document.getElementById('youtube-finder-code').textContent);
-                } catch (error) {
-                    console.error('Error loading original code:', error);
-                }
-            }, 100);
-        });
-    </script>
-
-    <!-- Your original code (hidden) -->
-    <script type="text/plain" id="youtube-finder-code">
-        // Original YouTubeIDFinder code would go here
-        // For now, we'll create a minimal version for testing
         
-        class YouTubeIDFinder {
-            constructor() {
-                this.grid = document.getElementById("grid");
-                this.loading = document.getElementById("loading");
-                this.searchInput = document.getElementById("search");
-                this.stats = document.getElementById("stats");
-                this.loadMoreBtn = document.getElementById("loadMoreBtn");
-                this.noResults = document.getElementById("noResults");
-                this.sidebar = document.getElementById("sidebar");
-                this.sidebarToggle = document.getElementById("sidebarToggle");
-                this.filterButtons = document.getElementById("filterButtons");
-                this.clearFilterBtn = document.getElementById("clearFilter");
-                
-                console.log('YouTubeIDFinder initialized');
-                console.log('Grid element:', this.grid);
-                console.log('Search input:', this.searchInput);
-                
-                this.init();
-            }
-            
-            init() {
-                console.log('Initializing YouTubeIDFinder...');
-                this.loadInitialData();
-            }
-            
-            async loadInitialData() {
-                console.log('Loading initial data...');
-                try {
-                    const initialDataEl = document.getElementById("initial-ids");
-                    if (!initialDataEl) {
-                        console.error('initial-ids element not found');
-                        return;
-                    }
-                    
-                    const initialIds = JSON.parse(initialDataEl.textContent);
-                    console.log('Initial IDs loaded:', initialIds.length);
-                    
-                    this.displayItems(initialIds.slice(0, 10));
-                    this.updateStats(`Loaded ${initialIds.length} initial IDs`);
-                } catch (error) {
-                    console.error('Error loading initial data:', error);
-                }
-            }
-            
-            displayItems(items) {
-                console.log('Displaying items:', items.length);
-                const fragment = document.createDocumentFragment();
-                
-                for (const id of items) {
-                    const link = document.createElement("a");
-                    link.href = `https://www.youtube.com/watch?v=${id}`;
-                    link.target = "_blank";
-                    link.textContent = id;
-                    link.rel = "noopener noreferrer";
-                    fragment.appendChild(link);
-                }
-                
-                this.grid.appendChild(fragment);
-                console.log('Items displayed, grid children:', this.grid.children.length);
-            }
-            
-            updateStats(message) {
-                if (this.stats) {
-                    this.stats.textContent = message;
-                }
-            }
+        function validateSyntax() {
+            const resultDiv = document.getElementById('syntax-result');
+            resultDiv.innerHTML = `
+                <div class="code-block">
+                    To validate your JavaScript syntax:
+                    <br><br>
+                    1. Copy your entire JavaScript code
+                    <br>
+                    2. Paste it into: <a href="https://jshint.com/" target="_blank">JSHint.com</a>
+                    <br>
+                    3. Or use browser DevTools: F12 → Console → Paste code
+                    <br><br>
+                    Common syntax errors that prevent class definition:
+                    <br>• Missing closing braces }
+                    <br>• Missing semicolons in strict mode
+                    <br>• Unclosed strings or comments
+                    <br>• Invalid characters (smart quotes, etc.)
+                </div>
+            `;
         }
+        
+        // Run initial checks
+        document.addEventListener('DOMContentLoaded', function() {
+            checkScriptTags();
+            checkClassDefinition();
+            
+            // Check again after a delay in case scripts are still loading
+            setTimeout(() => {
+                checkClassDefinition();
+            }, 2000);
+        });
     </script>
 </body>
 </html>
