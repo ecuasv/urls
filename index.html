@@ -3,262 +3,554 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube ID Finder</title>
-    <link rel="stylesheet" href="style.css">
+    <title>YouTube ID Finder Debug Tool</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 20px;
+        }
+
+        .debug-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+        }
+
+        .debug-section {
+            background: #333;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .debug-section h3 {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+
+        .status.pass {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status.fail {
+            background: #f44336;
+            color: white;
+        }
+
+        .status.warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        button {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background: #45b7aa;
+        }
+
+        .network-test {
+            margin: 20px 0;
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .file-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #444;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Add some basic styling for the original elements */
+        #grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        #grid a {
+            background: #333;
+            color: #4ecdc4;
+            text-decoration: none;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        #grid a:hover {
+            background: #444;
+        }
+
+        .search-container {
+            margin: 20px 0;
+        }
+
+        #search {
+            width: 300px;
+            padding: 10px;
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 5px;
+        }
+
+        #sidebar {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: #2a2a2a;
+            transition: left 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        #sidebar.open {
+            left: 0;
+        }
+
+        .filter-button {
+            display: block;
+            width: 100%;
+            margin: 5px 0;
+            background: #444;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-align: left;
+        }
+
+        .filter-button:hover {
+            background: #555;
+        }
+
+        .filter-button.active {
+            background: #4ecdc4;
+        }
+
+        #sidebarToggle {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1001;
+        }
+    </style>
 </head>
 <body>
-    <button id="limitSearchBtn" style="display: none;">
-    If the site crashes, click here to limit search to IDs with valid words only
-</button>
-    <button class="sidebar-toggle" id="sidebarToggle">
-    Filter IDs
-    </button>
-    <!-- Sidebar -->
-<div class="sidebar" id="sidebar">
-    <div class="sidebar-header">
-    </div>
-    <div class="sidebar-content">
-        <button class="filter-button clear-filter-btn" id="clearFilter">
-            Clear Filter
-        </button>
-        <div id="filterButtons">
-            <!-- Filter buttons will be dynamically added here -->
+    <div class="debug-container">
+        <h1>🔍 YouTube ID Finder Debug Tool</h1>
+        
+        <div class="debug-section">
+            <h3>DOM Elements Check</h3>
+            <div id="dom-check">Checking...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>File Access Test</h3>
+            <div id="file-check">Testing file access...</div>
+            <button onclick="testFileAccess()">Test File Access</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>Initial Data Check</h3>
+            <div id="initial-data-check">Checking initial data...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>Network Requests</h3>
+            <div id="network-requests">No requests made yet</div>
+            <button onclick="clearNetworkLog()">Clear Network Log</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>Console Errors</h3>
+            <div id="console-errors">No errors captured yet</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>Live Test</h3>
+            <button onclick="runLiveTest()">Run Live Test</button>
+            <div id="live-test-results"></div>
         </div>
     </div>
-</div>
-    <div class="container">
-        <div class="header">
-            <h1>YouTube ID Finder</h1>
-            <p>Search for words in YouTube video IDs</p>
-        </div>
+
+    <!-- Original HTML structure for testing -->
+    <div style="margin-top: 20px;">
+        <button id="sidebarToggle">☰ Filters</button>
         
         <div class="search-container">
-            <input type="text" id="search" placeholder="Search YouTube IDs..." autocomplete="off">
+            <input type="text" id="search" placeholder="Search YouTube IDs...">
+            <button id="limitSearchBtn" style="display: none;">Search All</button>
         </div>
         
-        <div class="stats" id="stats">
-        </div>
+        <div id="stats">Ready</div>
+        <div id="loading" style="display: none;">Loading...</div>
+        <div id="noResults" style="display: none;">No results found</div>
         
         <div id="grid"></div>
+        <button id="loadMoreBtn" style="display: none;">Load More</button>
         
-        <div id="loading">
-            <div class="loading-spinner"></div>
-            Loading...
-        </div>
-        
-        <button class="load-more-btn" id="loadMoreBtn" style="display: none;">
-            Load More
-        </button>
-        
-        <div class="no-results" id="noResults" style="display: none;">
-            No matching IDs found
+        <div id="sidebar">
+            <h3>Filters</h3>
+            <div id="filterButtons"></div>
+            <button id="clearFilter">Clear Filter</button>
         </div>
     </div>
-  <script id="initial-ids" type="application/json">
-    [
-  "----1-L-fQc",
-  "----9TnL24I",
-  "----meyKR48",
-  "----RdHLaoE",
-  "---0DMZnq9U",
-  "---0dO1ZocY",
-  "---0ilqrgSo",
-  "---0tgyEKHs",
-  "---0x9obGhc",
-  "---16MoRIlM",
-  "---1hl_hLf0",
-  "---1It_ZPyQ",
-  "---24eJHX7c",
-  "---25RbkH-Q",
-  "---27lxnCEI",
-  "---2885y9Kg",
-  "---2TgL9Oik",
-  "---3-KFLFo8",
-  "---3c1SrcJA",
-  "---3cBWQ8XU",
-  "---3ys7TnQA",
-  "---47911qbA",
-  "---47IWUaXI",
-  "---4NUmEeI0",
-  "---4ObKtxt4",
-  "---4wFyTdxw",
-  "---4X7zirc0",
-  "---5_-nABVI",
-  "---5C_vEKr4",
-  "---5G4vraGI",
-  "---5HQHiSpE",
-  "---5IHVK_kk",
-  "---5mjSxZ7U",
-  "---5UySMMok",
-  "---5YJbVhBs",
-  "---6_0FCGvs",
-  "---6dvIJccI",
-  "---6hgWeLjQ",
-  "---6J3CKhVk",
-  "---6NX0C8nw",
-  "---6QAjAFGY",
-  "---6ZaSNp3M",
-  "---72HMLmdc",
-  "---75m0NL2Q",
-  "---777dWWlA",
-  "---7ANgfkdw",
-  "---7HDeKN2w",
-  "---7tpc0eAI",
-  "---7XTyx29M",
-  "---8-lAtTj8",
-  "---8-RgqqQA",
-  "---8dukub-o",
-  "---8eR1kG9I",
-  "---93nHpU9Q",
-  "---98dd2usc",
-  "---9cBpg14Y",
-  "---9J2wEH6M",
-  "---9ODK0eeI",
-  "---9YL1k2TU",
-  "---_AF1FuwA",
-  "---_fVFlE68",
-  "---_LujDuFY",
-  "---_rQ3YMnc",
-  "---A87Y6of8",
-  "---abHr8RMw",
-  "---AhObfkAc",
-  "---ALEboNI8",
-  "---AludBYgU",
-  "---an6lH3gc",
-  "---an9w2f-M",
-  "---aPCddIDo",
-  "---AqqbFqNQ",
-  "---aUCzIWC4",
-  "---aWc-YvFM",
-  "---axHWiFAc",
-  "---AyuTNMEE",
-  "---b77nsDc0",
-  "---BCUwTa2w",
-  "---Bj2nbaLs",
-  "---bkjsPSVM",
-  "---BKrloEw0",
-  "---BmYmj-II",
-  "---BRbkg3Lw",
-  "---BRTx_FIU",
-  "---bsF1Bsrs",
-  "---BZzZFado",
-  "---C1xxJuqM",
-  "---CdtiqJg8",
-  "---cftkedFY",
-  "---CJbEVeKw",
-  "---Cm0T7N20",
-  "---cpCbUikU",
-  "---cTx9bQuA",
-  "---Cy7MhxNo",
-  "---d-3q6L98",
-  "---d2dVyG3w",
-  "---d57GQzGs",
-  "---Dcr9EtXs",
-  "---dEel94Xw",
-  "---DHLmcSfM",
-  "---dIPKRR4Q",
-  "---dKJg3Xjo",
-  "---dmeQPoOQ",
-  "---DmiqNJUI",
-  "---dmMBzI7U",
-  "---DMOap7dw",
-  "---dQs3pL5U",
-  "---DUD-BgqU",
-  "---E1AvUCl4",
-  "---E7EjUpRA",
-  "---EcQCPD5k",
-  "---edNB70aE",
-  "---EoXGjtA0",
-  "---eTOUwQSs",
-  "---EwGDlfAg",
-  "---EWsaOr4k",
-  "---ExQmc-2M",
-  "---F-ZDZmw8",
-  "---f3L7uHH8",
-  "---FBcZfi-A",
-  "---fdexPcY0",
-  "---Fg9yeYSU",
-  "---FHwSG9U4",
-  "---fmZ0ySzE",
-  "---fYMQhy50",
-  "---gbixRdjw",
-  "---GFDdFMJU",
-  "---GGcZeDgc",
-  "---GgK1TT2k",
-  "---GjLk4p7U",
-  "---h32aukSA",
-  "---H6RusJpc",
-  "---h87_25Hg",
-  "---h_BggiIQ",
-  "---HDttlhQg",
-  "---hJToG4pA",
-  "---hN-e2_sI",
-  "---HrcUBH40",
-  "---HUk9tqT8",
-  "---HyymYprE",
-  "---i-VOqUrY",
-  "---IampePrg",
-  "---IExeH0b8",
-  "---IFt2MiY4",
-  "---ihvx0z1g",
-  "---iipqMcIc",
-  "---iLqsqAFY",
-  "---IwwH9-H8",
-  "---iYJQH7fk",
-  "---Jh40ufbM",
-  "---JLvsZxwU",
-  "---kBMyUvZ4",
-  "---KdpNBHRs",
-  "---KEycxE3w",
-  "---KM5XvbGU",
-  "---KpVm0bOE",
-  "---kQEY-zxo",
-  "---Kwc-yrUM",
-  "---lCGkaPyA",
-  "---lcRhCgv0",
-  "---lECRS0-8",
-  "---lfrmqSLc",
-  "---LfzCuNio",
-  "---LH5QwmTc",
-  "---llTLrITg",
-  "---lnkrf6EM",
-  "---LS7wM6tI",
-  "---lUyVv9gw",
-  "---M5RE8nJo",
-  "---MCQ4btgQ",
-  "---mEiXCNQM",
-  "---MRK0TNHQ",
-  "---MxSea6bo",
-  "---MXV1jZV4",
-  "---NHMjOqAo",
-  "---niofbFMw",
-  "---nOgFTXQY",
-  "---O7HEiMa4",
-  "---oDHymwTU",
-  "---p_K6xoKA",
-  "---PcMaFq_0",
-  "---Pftnu-4Q",
-  "---PG_CqYmg",
-  "---PjgEr_7E",
-  "---PktoHrE4",
-  "---plzW7rsE",
-  "---PT-ZArnk",
-  "---pTx_1ej8",
-  "---pYYR38UY",
-  "---Q6eeGfd4",
-  "---QHn9Z8xc",
-  "---QmOJzacQ",
-  "---qN_8CTd8",
-  "---QokDR9z8",
-  "---QW-4Hhh8",
-  "---qy7AJF24",
-  "---R9ZXSVfo",
-  "---rEL8rQ28",
-  "---RfBIFQbA",
-  "---RhcXpjOQ"
-]
-  </script>
 
-    <script src="script.js"></script>
+    <!-- Sample initial data for testing -->
+    <script type="application/json" id="initial-ids">
+    ["dQw4w9WgXcQ", "jNQXAC9IVRw", "y6120QOlsfU", "kJQP7kiw5Fk", "L_jWHffIx5E", "fJ9rUzIMcZQ", "QB7ACr7pUuE", "2vjPBrBU-TM", "sTSA_sWGM44", "kXYiU_JCYtU"]
+    </script>
+
+    <script>
+        // Network request interceptor
+        const originalFetch = window.fetch;
+        const networkRequests = [];
+
+        window.fetch = function(...args) {
+            const url = args[0];
+            const startTime = Date.now();
+            
+            networkRequests.push({
+                url: url,
+                timestamp: new Date().toISOString(),
+                status: 'pending'
+            });
+            
+            updateNetworkLog();
+            
+            return originalFetch.apply(this, args)
+                .then(response => {
+                    const requestIndex = networkRequests.findIndex(req => 
+                        req.url === url && req.status === 'pending'
+                    );
+                    if (requestIndex !== -1) {
+                        networkRequests[requestIndex].status = response.status;
+                        networkRequests[requestIndex].ok = response.ok;
+                        networkRequests[requestIndex].duration = Date.now() - startTime;
+                    }
+                    updateNetworkLog();
+                    return response;
+                })
+                .catch(error => {
+                    const requestIndex = networkRequests.findIndex(req => 
+                        req.url === url && req.status === 'pending'
+                    );
+                    if (requestIndex !== -1) {
+                        networkRequests[requestIndex].status = 'error';
+                        networkRequests[requestIndex].error = error.message;
+                        networkRequests[requestIndex].duration = Date.now() - startTime;
+                    }
+                    updateNetworkLog();
+                    throw error;
+                });
+        };
+
+        // Console error capturing
+        const consoleErrors = [];
+        const originalConsoleError = console.error;
+        
+        console.error = function(...args) {
+            consoleErrors.push({
+                timestamp: new Date().toISOString(),
+                message: args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' ')
+            });
+            updateConsoleErrors();
+            originalConsoleError.apply(console, args);
+        };
+
+        function updateNetworkLog() {
+            const networkDiv = document.getElementById('network-requests');
+            if (networkRequests.length === 0) {
+                networkDiv.innerHTML = 'No requests made yet';
+                return;
+            }
+            
+            networkDiv.innerHTML = networkRequests.map(req => {
+                const statusClass = req.status === 'error' ? 'fail' : 
+                                   req.ok === false ? 'fail' : 
+                                   req.status === 'pending' ? 'warning' : 'pass';
+                return `
+                    <div class="status ${statusClass}">
+                        ${req.url} - ${req.status} ${req.duration ? `(${req.duration}ms)` : ''}
+                        ${req.error ? `- Error: ${req.error}` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateConsoleErrors() {
+            const errorsDiv = document.getElementById('console-errors');
+            if (consoleErrors.length === 0) {
+                errorsDiv.innerHTML = 'No errors captured yet';
+                return;
+            }
+            
+            errorsDiv.innerHTML = consoleErrors.map(error => `
+                <div class="status fail">
+                    ${error.timestamp}: ${error.message}
+                </div>
+            `).join('');
+        }
+
+        function clearNetworkLog() {
+            networkRequests.length = 0;
+            updateNetworkLog();
+        }
+
+        function checkDOMElements() {
+            const requiredElements = [
+                'grid', 'loading', 'search', 'stats', 'loadMoreBtn', 'noResults',
+                'sidebar', 'sidebarToggle', 'filterButtons', 'clearFilter', 'initial-ids'
+            ];
+            
+            const domDiv = document.getElementById('dom-check');
+            let html = '';
+            
+            requiredElements.forEach(id => {
+                const element = document.getElementById(id);
+                const exists = element !== null;
+                const statusClass = exists ? 'pass' : 'fail';
+                html += `<div class="status ${statusClass}">${id}: ${exists ? 'Found' : 'Missing'}</div>`;
+            });
+            
+            domDiv.innerHTML = html;
+        }
+
+        function checkInitialData() {
+            const initialDiv = document.getElementById('initial-data-check');
+            const initialDataEl = document.getElementById('initial-ids');
+            
+            if (!initialDataEl) {
+                initialDiv.innerHTML = '<div class="status fail">initial-ids element not found</div>';
+                return;
+            }
+            
+            try {
+                const data = JSON.parse(initialDataEl.textContent);
+                const isArray = Array.isArray(data);
+                const length = isArray ? data.length : 0;
+                
+                initialDiv.innerHTML = `
+                    <div class="status ${isArray ? 'pass' : 'fail'}">
+                        Data type: ${isArray ? 'Array' : typeof data}
+                    </div>
+                    <div class="status ${length > 0 ? 'pass' : 'fail'}">
+                        Data length: ${length}
+                    </div>
+                    <div class="code-block">
+                        Sample data: ${JSON.stringify(data.slice(0, 3), null, 2)}
+                    </div>
+                `;
+            } catch (error) {
+                initialDiv.innerHTML = `
+                    <div class="status fail">JSON Parse Error: ${error.message}</div>
+                    <div class="code-block">Raw content: ${initialDataEl.textContent.substring(0, 200)}...</div>
+                `;
+            }
+        }
+
+        async function testFileAccess() {
+            const fileDiv = document.getElementById('file-check');
+            const testFiles = ['found.txt', 'chunk_0.txt', 'playlist1.txt'];
+            
+            fileDiv.innerHTML = 'Testing file access...';
+            
+            const results = [];
+            for (const file of testFiles) {
+                try {
+                    const response = await fetch(file);
+                    const status = response.ok ? 'pass' : 'fail';
+                    const text = response.ok ? await response.text() : '';
+                    const preview = text.substring(0, 100).replace(/\n/g, '\\n');
+                    
+                    results.push(`
+                        <div class="status ${status}">
+                            ${file}: ${response.status} ${response.statusText}
+                            ${response.ok ? `(${text.split('\\n').length} lines)` : ''}
+                        </div>
+                        ${response.ok ? `<div class="code-block">Preview: ${preview}...</div>` : ''}
+                    `);
+                } catch (error) {
+                    results.push(`
+                        <div class="status fail">
+                            ${file}: Error - ${error.message}
+                        </div>
+                    `);
+                }
+            }
+            
+            fileDiv.innerHTML = results.join('');
+        }
+
+        async function runLiveTest() {
+            const resultsDiv = document.getElementById('live-test-results');
+            resultsDiv.innerHTML = 'Running live test...';
+            
+            try {
+                // Try to instantiate the YouTubeIDFinder class
+                const finder = new YouTubeIDFinder();
+                resultsDiv.innerHTML = '<div class="status pass">YouTubeIDFinder class instantiated successfully</div>';
+                
+                // Test if initial data loads
+                setTimeout(() => {
+                    const gridItems = document.querySelectorAll('#grid a');
+                    const hasItems = gridItems.length > 0;
+                    
+                    resultsDiv.innerHTML += `
+                        <div class="status ${hasItems ? 'pass' : 'fail'}">
+                            Grid items loaded: ${gridItems.length}
+                        </div>
+                    `;
+                }, 2000);
+                
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="status fail">Error creating YouTubeIDFinder: ${error.message}</div>`;
+            }
+        }
+
+        // Initialize debug checks
+        document.addEventListener('DOMContentLoaded', function() {
+            checkDOMElements();
+            checkInitialData();
+            
+            // Also test the original code
+            setTimeout(() => {
+                try {
+                    eval(document.getElementById('youtube-finder-code').textContent);
+                } catch (error) {
+                    console.error('Error loading original code:', error);
+                }
+            }, 100);
+        });
+    </script>
+
+    <!-- Your original code (hidden) -->
+    <script type="text/plain" id="youtube-finder-code">
+        // Original YouTubeIDFinder code would go here
+        // For now, we'll create a minimal version for testing
+        
+        class YouTubeIDFinder {
+            constructor() {
+                this.grid = document.getElementById("grid");
+                this.loading = document.getElementById("loading");
+                this.searchInput = document.getElementById("search");
+                this.stats = document.getElementById("stats");
+                this.loadMoreBtn = document.getElementById("loadMoreBtn");
+                this.noResults = document.getElementById("noResults");
+                this.sidebar = document.getElementById("sidebar");
+                this.sidebarToggle = document.getElementById("sidebarToggle");
+                this.filterButtons = document.getElementById("filterButtons");
+                this.clearFilterBtn = document.getElementById("clearFilter");
+                
+                console.log('YouTubeIDFinder initialized');
+                console.log('Grid element:', this.grid);
+                console.log('Search input:', this.searchInput);
+                
+                this.init();
+            }
+            
+            init() {
+                console.log('Initializing YouTubeIDFinder...');
+                this.loadInitialData();
+            }
+            
+            async loadInitialData() {
+                console.log('Loading initial data...');
+                try {
+                    const initialDataEl = document.getElementById("initial-ids");
+                    if (!initialDataEl) {
+                        console.error('initial-ids element not found');
+                        return;
+                    }
+                    
+                    const initialIds = JSON.parse(initialDataEl.textContent);
+                    console.log('Initial IDs loaded:', initialIds.length);
+                    
+                    this.displayItems(initialIds.slice(0, 10));
+                    this.updateStats(`Loaded ${initialIds.length} initial IDs`);
+                } catch (error) {
+                    console.error('Error loading initial data:', error);
+                }
+            }
+            
+            displayItems(items) {
+                console.log('Displaying items:', items.length);
+                const fragment = document.createDocumentFragment();
+                
+                for (const id of items) {
+                    const link = document.createElement("a");
+                    link.href = `https://www.youtube.com/watch?v=${id}`;
+                    link.target = "_blank";
+                    link.textContent = id;
+                    link.rel = "noopener noreferrer";
+                    fragment.appendChild(link);
+                }
+                
+                this.grid.appendChild(fragment);
+                console.log('Items displayed, grid children:', this.grid.children.length);
+            }
+            
+            updateStats(message) {
+                if (this.stats) {
+                    this.stats.textContent = message;
+                }
+            }
+        }
+    </script>
 </body>
 </html>
