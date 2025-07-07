@@ -18,11 +18,11 @@ class YouTubeIDFinder {
         this.searchResultIndex = 0;
         this.searchTimeout = null;
         this.searchController = null;
-    this.playlistIds = {
-        'playlist1.txt': 'PL_KtqxTCaHT6yYy5POQ8EqmtTQqctG9dh',
-        'playlist2.txt': 'PL_KtqxTCaHT5by5xMzIlrSVksZiSB_69Z',
-        'playlist3.txt': 'PL_KtqxTCaHT48V5Q3S_LTVPPC2Mz_7ikN'
-    };
+        this.playlistIds = {
+            'playlist1.txt': 'PL_KtqxTCaHT6yYy5POQ8EqmtTQqctG9dh',
+            'playlist2.txt': 'PL_KtqxTCaHT5by5xMzIlrSVksZiSB_69Z',
+            'playlist3.txt': 'PL_KtqxTCaHT48V5Q3S_LTVPPC2Mz_7ikN'
+        };
         // Sidebar properties
         this.sidebar = document.getElementById("sidebar");
         this.sidebarToggle = document.getElementById("sidebarToggle");
@@ -41,47 +41,55 @@ class YouTubeIDFinder {
 
     init() {
         this.deviceClass = this.detectDeviceClass();
-        this.limitedMode = false; // Track if we're in limited mode
+        
+        this.limitedMode = true;
+        this.allowedChunks = [-1]; 
         
         if (this.deviceClass === "mobile") {
-            // On mobile, only search found.txt
-            this.allowedChunks = [-1];
             this.itemsPerLoad = 50;
-            this.limitedMode = true;
         } else {
-            // On desktop, search all chunks by default
-            this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
             this.itemsPerLoad = 200;
         }
 
         this.setupEventListeners();
         this.loadInitialData();
-        this.setupLimitSearchButton();
+        this.setupExpandSearchButton();
         this.setupClearSearchButton();
-        this.preloadChunks(); // Only preload what we need
+        this.preloadChunks();
     }
 
-    setupLimitSearchButton() {
-        this.limitSearchBtn = document.getElementById("limitSearchBtn");
-
+    setupExpandSearchButton() {
+        this.expandSearchBtn = document.getElementById("limitSearchBtn"); 
+        
         if (this.deviceClass === "desktop") {
-            this.limitSearchBtn.style.display = "block";
-            this.limitSearchBtn.style.padding = "10px 16px";
-            this.limitSearchBtn.style.fontSize = "14px";
-            this.limitSearchBtn.style.marginBottom = "15px";
-            this.limitSearchBtn.addEventListener("click", () => {
-                this.allowedChunks = [-1]; // Only search found.txt
-                this.limitedMode = true;
-                this.clearChunkCache(); // Clear memory of other chunks
+            this.expandSearchBtn.style.display = "block";
+            this.expandSearchBtn.style.padding = "10px 16px";
+            this.expandSearchBtn.style.fontSize = "14px";
+            this.expandSearchBtn.style.marginBottom = "15px";
+            
+            this.expandSearchBtn.textContent = "Search All 78 Million IDs";
+            this.expandSearchBtn.title = "Expand search to include all YouTube IDs (uses more bandwidth)";
+            
+            this.expandSearchBtn.addEventListener("click", () => {
+                this.allowedChunks = [-1, ...Array.from({ length: this.totalChunks }, (_, i) => i)];
+                this.limitedMode = false;
+                this.preloadAllChunks();
                 this.clearSearch();
-                this.updateStats("Limited search mode activated: searching only known words");
-                this.limitSearchBtn.style.display = "none"; // Hide button after use
+                this.updateStats("Full search mode activated: searching all 78 million IDs");
+                this.expandSearchBtn.style.display = "none";
             });
         }
     }
 
+    async preloadAllChunks() {
+        const preloadPromises = [];
+        for (let i = 0; i < this.totalChunks; i++) {
+            preloadPromises.push(this.loadChunk(i));
+        }
+        await Promise.allSettled(preloadPromises);
+    }
+
     setupClearSearchButton() {
-        // Create clear search button
         const clearSearchBtn = document.createElement("button");
         clearSearchBtn.id = "clearSearchBtn";
         clearSearchBtn.textContent = "Clear";
@@ -96,7 +104,6 @@ class YouTubeIDFinder {
         clearSearchBtn.style.fontSize = "14px";
         clearSearchBtn.style.verticalAlign = "top";
         
-        // Add the button after the search container
         const searchContainer = document.querySelector(".search-container");
         searchContainer.style.display = "flex";
         searchContainer.style.alignItems = "center";
@@ -116,7 +123,6 @@ class YouTubeIDFinder {
             clearSearchBtn.style.background = "#dc3545";
         });
 
-        // Show/hide clear button based on search input
         this.searchInput.addEventListener("input", () => {
             clearSearchBtn.style.display = this.searchInput.value.trim() ? "block" : "none";
         });
@@ -147,28 +153,30 @@ class YouTubeIDFinder {
         });
 
         // Sidebar functionality
-    this.sidebarToggle.addEventListener("click", (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-        this.toggleSidebar();
-    });
-    this.clearFilterBtn.addEventListener("click", () => {
-        this.clearFilter();
-    });
-    document.addEventListener("click", (e) => {
-        this.handleClickOutside(e);
-    });
-    this.sidebar.addEventListener("click", (e) => {
-        e.stopPropagation();
-    });
-    this.createFilterButtons();
+        this.sidebarToggle.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.toggleSidebar();
+        });
+        this.clearFilterBtn.addEventListener("click", () => {
+            this.clearFilter();
+        });
+        document.addEventListener("click", (e) => {
+            this.handleClickOutside(e);
+        });
+        this.sidebar.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+        this.createFilterButtons();
     }
-handleClickOutside(event) {
-    if (!this.sidebar.classList.contains("open")) return;
-    if (!this.sidebar.contains(event.target) && 
-        !this.sidebarToggle.contains(event.target)) {
-        this.closeSidebar();
+
+    handleClickOutside(event) {
+        if (!this.sidebar.classList.contains("open")) return;
+        if (!this.sidebar.contains(event.target) && 
+            !this.sidebarToggle.contains(event.target)) {
+            this.closeSidebar();
+        }
     }
-}
+
     async loadChunk(chunkIndex) {
         if (this.chunkCache.has(chunkIndex)) {
             return this.chunkCache.get(chunkIndex);
@@ -188,46 +196,50 @@ handleClickOutside(event) {
         }
     }
 
-async preloadChunks() {
-    try {
-        const response = await fetch("found.txt");
-        if (response.ok) {
-            const text = await response.text();
-            const ids = text.split("\n").filter(id => id.trim());
-            this.chunkCache.set(-1, ids);
-        }
-    } catch (err) {
-        console.error("Error preloading found.txt:", err);
-    }
-    const filterPreloadPromises = this.filterFiles.map(async (filename) => {
+    async preloadChunks() {
         try {
-            const response = await fetch(filename);
+            const response = await fetch("found.txt");
             if (response.ok) {
                 const text = await response.text();
                 const ids = text.split("\n").filter(id => id.trim());
-                // Cache the IDs with a filter prefix
-                this.chunkCache.set(`filter_${filename}`, ids);
+                this.chunkCache.set(-1, ids);
             }
         } catch (err) {
-            console.error(`Error preloading filter ${filename}:`, err);
+            console.error("Error preloading found.txt:", err);
         }
-    });
-    await Promise.allSettled(filterPreloadPromises);
-    if (!this.limitedMode) {
-        const preloadPromises = [];
-        for (let i = 0; i < this.totalChunks; i++) {
-            preloadPromises.push(this.loadChunk(i));
-        }
-        await Promise.allSettled(preloadPromises);
+        
+        const filterPreloadPromises = this.filterFiles.map(async (filename) => {
+            try {
+                const response = await fetch(filename);
+                if (response.ok) {
+                    const text = await response.text();
+                    const ids = text.split("\n").filter(id => id.trim());
+                    this.chunkCache.set(`filter_${filename}`, ids);
+                }
+            } catch (err) {
+                console.error(`Error preloading filter ${filename}:`, err);
+            }
+        });
+        await Promise.allSettled(filterPreloadPromises);
     }
-}
 
     clearChunkCache() {
-        // Keep only found.txt in cache, clear everything else
         const foundData = this.chunkCache.get(-1);
+        const filterData = new Map();
+        
+        for (const [key, value] of this.chunkCache.entries()) {
+            if (key.toString().startsWith('filter_')) {
+                filterData.set(key, value);
+            }
+        }
+        
         this.chunkCache.clear();
         if (foundData) {
             this.chunkCache.set(-1, foundData);
+        }
+        
+        for (const [key, value] of filterData.entries()) {
+            this.chunkCache.set(key, value);
         }
     }
 
@@ -244,6 +256,8 @@ async preloadChunks() {
             this.currentDisplayIndex = itemsToShow;
             this.updateLoadMoreButton();
             this.initialLoaded = true;
+            
+            this.updateStats("Displaying known words only - click 'Search All 78 Million IDs' to expand search scope");
         } catch (error) {
             console.error("Error loading initial data:", error);
             this.updateStats("Error loading data");
@@ -284,11 +298,8 @@ async preloadChunks() {
 
     async handleSearch() {
         const query = this.searchInput.value.trim();
-
-        // Clear any active filter when searching
         if (this.activeFilter) {
             this.clearFilter();
-            // Small delay to let clear filter complete
             await new Promise(resolve => setTimeout(resolve, 100));
         }
 
@@ -319,68 +330,81 @@ async preloadChunks() {
         await this.performSearch();
     }
 
-    async performSearch() {
-        this.showLoading(true);
-        this.updateStats("Searching...");
+async performSearch() {
+    this.showLoading(true);
+    this.updateStats("Searching...");
 
-        const seen = new Set();
-        let totalMatches = 0;
-        let chunksCompleted = 0;
+    const seen = new Set();
+    let totalMatches = 0;
+    let chunksCompleted = 0;
+    const totalChunks = this.allowedChunks.length;
 
-        const displayBatch = (matches) => {
-            const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
-            if (newItems.length > 0) {
-                this.displayItems(newItems);
-                this.searchResultIndex += newItems.length;
-            }
-        };
-
-        // Use allowedChunks instead of all chunks
-        for (const chunkIndex of this.allowedChunks) {
-            const promise = chunkIndex === -1
-                ? Promise.resolve(this.chunkCache.get(-1) || [])
-                : this.loadChunk(chunkIndex);
-
-            promise.then(chunk => {
-                if (this.searchController?.signal.aborted) return;
-
-                const localMatches = [];
-                for (const id of chunk) {
-                    if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
-                        seen.add(id);
-                        this.searchResults.push(id);
-                        localMatches.push(id);
-                        totalMatches++;
-                    }
-                }
-
-                displayBatch(localMatches);
-
-                if (chunkIndex >= 0) {
-                    const searchedMillion = (chunkIndex + 1) * 2;
-                    const matchText = totalMatches === 1 ? "match" : "matches";
-                    this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
-                } else if (chunkIndex === -1) {
-                    // Searching only found.txt
-                    const matchText = totalMatches === 1 ? "match" : "matches";
-                    this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
-                }
-
-                chunksCompleted++;
-                if (chunksCompleted === this.allowedChunks.length && !this.searchController?.signal.aborted) {
-                    if (totalMatches === 0) {
-                        this.noResults.style.display = "block";
-                        this.loadMoreBtn.style.display = "none";
-                    } else {
-                        this.updateLoadMoreButton();
-                    }
-                    this.showLoading(false);
-                }
-            }).catch(err => {
-                console.error(`Error loading chunk ${chunkIndex}:`, err);
-            });
+    const displayBatch = (matches) => {
+        const newItems = matches.slice(0, this.itemsPerLoad - this.grid.children.length);
+        if (newItems.length > 0) {
+            this.displayItems(newItems);
+            this.searchResultIndex += newItems.length;
         }
+    };
+
+    const chunkPromises = this.allowedChunks.map(chunkIndex => {
+        const promise = chunkIndex === -1
+            ? Promise.resolve(this.chunkCache.get(-1) || [])
+            : this.loadChunk(chunkIndex);
+
+        return promise.then(chunk => {
+            if (this.searchController?.signal.aborted) return null;
+
+            const localMatches = [];
+            for (const id of chunk) {
+                if (id.toLowerCase().includes(this.searchTerm) && !seen.has(id)) {
+                    seen.add(id);
+                    this.searchResults.push(id);
+                    localMatches.push(id);
+                    totalMatches++;
+                }
+            }
+
+            displayBatch(localMatches);
+
+            chunksCompleted++;
+            
+            if (chunkIndex >= 0) {
+                const searchedMillion = (chunkIndex + 1) * 2;
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched ${searchedMillion} million out of 78 million IDs, found ${totalMatches} ${matchText}`);
+            } else if (chunkIndex === -1) {
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Searched known words only, found ${totalMatches} ${matchText}`);
+            }
+
+            return { chunkIndex, matches: localMatches.length };
+        }).catch(err => {
+            console.error(`Error loading chunk ${chunkIndex}:`, err);
+            chunksCompleted++;
+            return null;
+        });
+    });
+    try {
+        await Promise.allSettled(chunkPromises);
+        if (!this.searchController?.signal.aborted) {
+            if (totalMatches === 0) {
+                this.noResults.style.display = "block";
+                this.loadMoreBtn.style.display = "none";
+                this.updateStats("No results found");
+            } else {
+                const matchText = totalMatches === 1 ? "match" : "matches";
+                this.updateStats(`Search complete: found ${totalMatches} ${matchText}`);
+                this.updateLoadMoreButton();
+            }
+        }
+    } catch (error) {
+        console.error("Search error:", error);
+        this.updateStats("Search error occurred");
+    } finally {
+        this.showLoading(false);
     }
+}
 
     loadMoreSearchResults() {
         if (this.searchResultIndex >= this.searchResults.length) return;
@@ -391,27 +415,26 @@ async preloadChunks() {
         this.updateLoadMoreButton();
     }
 
-displayItems(items, playlistId = null) {
-    const fragment = document.createDocumentFragment();
-    for (const id of items) {
-        const link = document.createElement("a");
-        
-        // Build URL based on whether it's a playlist or regular video
-        if (playlistId) {
-            link.href = `https://www.youtube.com/watch?v=${id}&list=${playlistId}`;
-        } else {
-            link.href = `https://www.youtube.com/watch?v=${id}`;
+    displayItems(items, playlistId = null) {
+        const fragment = document.createDocumentFragment();
+        for (const id of items) {
+            const link = document.createElement("a");
+            
+            if (playlistId) {
+                link.href = `https://www.youtube.com/watch?v=${id}&list=${playlistId}`;
+            } else {
+                link.href = `https://www.youtube.com/watch?v=${id}`;
+            }
+            
+            link.target = "_blank";
+            link.innerHTML = this.highlightMatch(id);
+            link.rel = "noopener noreferrer";
+            fragment.appendChild(link);
         }
-        
-        link.target = "_blank";
-        link.innerHTML = this.highlightMatch(id);
-        link.rel = "noopener noreferrer";
-        fragment.appendChild(link);
+        requestAnimationFrame(() => {
+            this.grid.appendChild(fragment);
+        });
     }
-    requestAnimationFrame(() => {
-        this.grid.appendChild(fragment);
-    });
-}
 
     clearSearch() {
         this.searchTerm = "";
@@ -454,121 +477,112 @@ displayItems(items, playlistId = null) {
 
     // Sidebar methods
     toggleSidebar() {
-    if (this.sidebar.classList.contains("open")) {
-        this.closeSidebar();
-    } else {
-        this.openSidebar();
+        if (this.sidebar.classList.contains("open")) {
+            this.closeSidebar();
+        } else {
+            this.openSidebar();
+        }
     }
-}
+
     openSidebar() {
-    this.sidebar.classList.add("open");
-    // Optional: Add overlay
-    this.createOverlay();
-}
+        this.sidebar.classList.add("open");
+    }
+
     closeSidebar() {
-    this.sidebar.classList.remove("open");
-    // Optional: Remove overlay
-    this.removeOverlay();
-}
+        this.sidebar.classList.remove("open");
+    }
 
-createFilterButtons() {
-    const filterDisplayNames = {
-        'playlist1.txt': 'IDs related to the video itself',
-        'playlist2.txt': 'selected 7+ letters', 
-        'playlist3.txt': 'selected 6 letters',
-        '10num.txt': '10 numbers',
-        'upper.txt': 'ALL UPPERCASE',
-        'lower.txt': 'all lowercase',
-        '9w.txt': '9 letter words',
-        '8s.txt': '8 letter words',
-        '7s.txt': '7 letter words',
-        '6s.txt': '6 letter words',
-        '6+5s.txt': '6+5 letter words',
-        '6+4s.txt': '6+4 letter words',
-        '6+3s.txt': '6+3 letter words',
-        '6+3+2s.txt': '6+3+2 letter words',
-        '5+5s.txt': '5+5 letter words',
-        '5+4s.txt': '5+4 letter words',
-        '5+3+3s.txt': '5+3+3 letter words',
-        '5+2+2+2s.txt': '5+2+2+2 letter words',
-        '4+4+3s.txt': '4+4+3 letter words'
-    };
+    createFilterButtons() {
+        const filterDisplayNames = {
+            'playlist1.txt': 'IDs related to the video itself',
+            'playlist2.txt': 'selected 7+ letters', 
+            'playlist3.txt': 'selected 6 letters',
+            '10num.txt': '10 numbers',
+            'upper.txt': 'ALL UPPERCASE',
+            'lower.txt': 'all lowercase',
+            '9w.txt': '9 letter words',
+            '8s.txt': '8 letter words',
+            '7s.txt': '7 letter words',
+            '6s.txt': '6 letter words',
+            '6+5s.txt': '6+5 letter words',
+            '6+4s.txt': '6+4 letter words',
+            '6+3s.txt': '6+3 letter words',
+            '6+3+2s.txt': '6+3+2 letter words',
+            '5+5s.txt': '5+5 letter words',
+            '5+4s.txt': '5+4 letter words',
+            '5+3+3s.txt': '5+3+3 letter words',
+            '5+2+2+2s.txt': '5+2+2+2 letter words',
+            '4+4+3s.txt': '4+4+3 letter words'
+        };
 
-    this.filterFiles.forEach(filename => {
-        const button = document.createElement("button");
-        button.className = "filter-button";
-        
-        // Use custom display name if available, otherwise use filename without .txt
-        button.textContent = filterDisplayNames[filename] || filename.replace('.txt', '');
-        
-        button.addEventListener("click", () => {
-            this.loadFilter(filename, button);
+        this.filterFiles.forEach(filename => {
+            const button = document.createElement("button");
+            button.className = "filter-button";
+            button.textContent = filterDisplayNames[filename] || filename.replace('.txt', '');
+            button.addEventListener("click", () => {
+                this.loadFilter(filename, button);
+            });
+            this.filterButtons.appendChild(button);
         });
-        this.filterButtons.appendChild(button);
-    });
-}
+    }
 
-async loadFilter(filename, buttonElement) {
-    if (this.isLoading) return;
-    
-    // Update active filter button
-    document.querySelectorAll('.filter-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    buttonElement.classList.add('active');
-    
-    this.activeFilter = filename;
-    this.showLoading(true);
-    this.updateStats(`Loading filter: ${filename.replace('.txt', '')}...`);
-    
-    try {
-        const response = await fetch(filename);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    async loadFilter(filename, buttonElement) {
+        if (this.isLoading) return;
         
-        const text = await response.text();
-        const ids = text.split("\n").filter(line => line.trim());
-        this.grid.innerHTML = "";
+        document.querySelectorAll('.filter-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        buttonElement.classList.add('active');
         
-        // Check if this is a playlist file and get the playlist ID
-        const playlistId = this.playlistIds[filename];
-        this.displayItems(ids, playlistId);
+        this.activeFilter = filename;
+        this.showLoading(true);
+        this.updateStats(`Loading filter: ${filename.replace('.txt', '')}...`);
         
-        this.updateStats(`Showing ${ids.length} IDs`);
-        this.loadMoreBtn.style.display = "none"; // No load more for filters
-        this.noResults.style.display = ids.length === 0 ? "block" : "none";
-        
-        // Close sidebar on mobile
-        if (window.innerWidth <= 768) {
-            this.sidebar.classList.remove("open");
+        try {
+            const response = await fetch(filename);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const text = await response.text();
+            const ids = text.split("\n").filter(line => line.trim());
+            this.grid.innerHTML = "";
+            
+            const playlistId = this.playlistIds[filename];
+            this.displayItems(ids, playlistId);
+            
+            this.updateStats(`Showing ${ids.length} IDs`);
+            this.loadMoreBtn.style.display = "none";
+            this.noResults.style.display = ids.length === 0 ? "block" : "none";
+            
+            if (window.innerWidth <= 768) {
+                this.sidebar.classList.remove("open");
+            }
+            
+        } catch (error) {
+            console.error(`Error loading filter ${filename}:`, error);
+            this.updateStats(`Error loading filter: ${filename.replace('.txt', '')}`);
         }
         
-    } catch (error) {
-        console.error(`Error loading filter ${filename}:`, error);
-        this.updateStats(`Error loading filter: ${filename.replace('.txt', '')}`);
+        this.showLoading(false);
     }
-    
-    this.showLoading(false);
-}
 
-clearFilter() {
-    this.activeFilter = null;
-    document.querySelectorAll('.filter-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Return to normal browsing mode
-    this.grid.innerHTML = "";
-    this.currentDisplayChunk = 0;
-    this.currentDisplayIndex = 0;
-    this.loadInitialData();
-    
-    // Close sidebar on mobile using the new method
-    if (window.innerWidth <= 768) {
-        this.closeSidebar();
+    clearFilter() {
+        this.activeFilter = null;
+        document.querySelectorAll('.filter-button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        this.grid.innerHTML = "";
+        this.currentDisplayChunk = 0;
+        this.currentDisplayIndex = 0;
+        this.loadInitialData();
+        
+        if (window.innerWidth <= 768) {
+            this.closeSidebar();
+        }
     }
-}
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     new YouTubeIDFinder();
 });
+
